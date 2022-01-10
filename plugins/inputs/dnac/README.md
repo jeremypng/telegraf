@@ -20,17 +20,15 @@ generate it using `telegraf --usage <plugin-name>`.
   ## SSL Verify true/false
   sslverify = "false"
   ## Report Client Health
-  clienthealth = "true"
+  clienthealth = true
+  ## Report Network Health
+  networkhealth = true
 ```
 
 ### Metrics
 
-Here you should add an optional description and links to where the user can
-get more information about the measurements.
-
-If the output is determined dynamically based on the input source, or there
-are more metrics than can reasonably be listed, describe how the input is
-mapped to the output.
+Client Health API - 
+https://developer.cisco.com/docs/dna-center/#!get-overall-client-health
 
 - dnac_client_health
   - tags:
@@ -42,7 +40,10 @@ mapped to the output.
     - client_type_\<type\>_score_type\_\<type\>_client_count (type, unit)
     - client_type_\<type\>_score_type\_\<type>_root_cause\_\<cause\>_client_count (type, unit)
 
-+ dnac_network_health
+Network Health API - 
+https://developer.cisco.com/docs/dna-center/#!get-overall-network-health
+
+- dnac_network_health
   - tags:
     - dnac_host
     - site_id
