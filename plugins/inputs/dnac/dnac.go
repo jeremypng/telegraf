@@ -5,7 +5,8 @@ package dnac
 import (
 	"net/url"
 
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/sdk"
+	// dnac_sdk "github.com/cisco-en-programmability/dnacenter-go-sdk/sdk"
+	dnac_sdk "github.com/cisco-en-programmability/dnacenter-go-sdk/v3/sdk"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
 	"github.com/influxdata/telegraf/plugins/inputs"
@@ -20,16 +21,17 @@ type Dnac struct {
 	ClientHealth  bool
 	NetworkHealth bool
 	Log           telegraf.Logger
+	Client        *dnac_sdk.Client
 }
 
 func (d *Dnac) Description() string {
 	return "a Cisco DNAC plugin"
 }
 
-func (s *Dnac) SampleConfig() string {
+func (d *Dnac) SampleConfig() string {
 	return `
   ## Specify DNAC Base URL
-  dnacbaseurl = "sandboxdnac.cisco.com"
+  dnacbaseurl = "https://sandboxdnac.cisco.com"
   ## Specify Credentials
   username = "devnetuser"
   password = "Cisco123!"
@@ -49,7 +51,23 @@ func (d *Dnac) Init() error {
 	return nil
 }
 
+func (d *Dnac) InitClient() error {
+	var Client, err = dnac_sdk.NewClientWithOptionsNoAuth(d.DnacBaseURL, d.Username, d.Password, d.Debug, d.SSLVerify)
+	if err != nil {
+		d.Log.Errorf("Connection or login to DNAC failed")
+		return err
+	}
+	d.Client = Client
+	return nil
+}
+
+func NewDnac() *Dnac {
+	return &Dnac{}
+}
+
 func (d *Dnac) Gather(acc telegraf.Accumulator) error {
+
+	var err error
 
 	var dnacUrl, url_err = url.Parse(d.DnacBaseURL)
 	if url_err != nil {
@@ -57,39 +75,47 @@ func (d *Dnac) Gather(acc telegraf.Accumulator) error {
 		return url_err
 	}
 
-	var Client, err = dnac.NewClientWithOptions(d.DnacBaseURL, d.Username, d.Password, d.Debug, d.SSLVerify)
+	err = d.InitClient()
 	if err != nil {
-		d.Log.Errorf("Connection or login to DNAC failed")
+		return err
+	}
+
+	err = d.Client.AuthClient()
+	if err != nil {
 		return err
 	}
 
 	if d.ClientHealth {
 
-		getOverallClientHealthQueryParams := &dnac.GetOverallClientHealthQueryParams{}
-		client_health, _, err := Client.Clients.GetOverallClientHealth(getOverallClientHealthQueryParams)
+		getOverallClientHealthQueryParams := &dnac_sdk.GetOverallClientHealthQueryParams{}
+		client_health, _, err := d.Client.Clients.GetOverallClientHealth(getOverallClientHealthQueryParams)
 		if err != nil {
 			d.Log.Errorf("Client health request failed")
 			return err
 		}
 
-		for _, response := range client_health.Response {
+		for _, response := range *client_health.Response {
 			tags := map[string]string{
-				"dnac_host": dnacUrl.Host,
-				"site_id":   response.SiteID,
+				"host":    dnacUrl.Host,
+				"site_id": response.SiteID,
 			}
 			fields := make(map[string]interface{})
 
-			for _, clientType := range response.ScoreDetail {
+			for _, clientType := range *response.ScoreDetail {
 				l1_prefix := clientType.ScoreCategory.ScoreCategory + "_" + clientType.ScoreCategory.Value
 				fields[internal.SnakeCase(l1_prefix+"_client_count")] = clientType.ClientCount
 				fields[internal.SnakeCase(l1_prefix+"_score_value")] = clientType.ScoreValue
-				for _, scoreType := range clientType.ScoreList {
-					l2_prefix := scoreType.ScoreCategory.ScoreCategory + "_" + scoreType.ScoreCategory.Value
-					fields[internal.SnakeCase(l1_prefix+"_"+l2_prefix+"_client_count")] = scoreType.ClientCount
-					for _, rootCause := range scoreType.ScoreList {
-						if rootCause.ScoreCategory.ScoreCategory == "rootCause" {
-							l3_prefix := rootCause.ScoreCategory.ScoreCategory + "_" + rootCause.ScoreCategory.Value
-							fields[internal.SnakeCase(l1_prefix+"_"+l2_prefix+"_"+l3_prefix+"_client_count")] = rootCause.ClientCount
+				if clientType.ScoreList != nil {
+					for _, scoreType := range *clientType.ScoreList {
+						l2_prefix := scoreType.ScoreCategory.ScoreCategory + "_" + scoreType.ScoreCategory.Value
+						fields[internal.SnakeCase(l1_prefix+"_"+l2_prefix+"_client_count")] = scoreType.ClientCount
+						if scoreType.ScoreList != nil {
+							for _, rootCause := range *scoreType.ScoreList {
+								if rootCause.ScoreCategory.ScoreCategory == "rootCause" {
+									l3_prefix := rootCause.ScoreCategory.ScoreCategory + "_" + rootCause.ScoreCategory.Value
+									fields[internal.SnakeCase(l1_prefix+"_"+l2_prefix+"_"+l3_prefix+"_client_count")] = rootCause.ClientCount
+								}
+							}
 						}
 					}
 				}
@@ -100,21 +126,21 @@ func (d *Dnac) Gather(acc telegraf.Accumulator) error {
 	}
 
 	if d.NetworkHealth {
-		getOverallNetworkHeathQueryParams := &dnac.GetOverallNetworkHealthQueryParams{}
+		getOverallNetworkHeathQueryParams := &dnac_sdk.GetOverallNetworkHealthQueryParams{}
 
-		network_health, _, err := Client.Topology.GetOverallNetworkHealth(getOverallNetworkHeathQueryParams)
+		network_health, _, err := d.Client.Topology.GetOverallNetworkHealth(getOverallNetworkHeathQueryParams)
 
 		if err != nil {
 			d.Log.Errorf("Network health request failed")
 			return err
 		}
 		network_health_tags := map[string]string{
-			"dnac_host": dnacUrl.Host,
-			"site_id":   network_health.MeasuredBy,
+			"host":    dnacUrl.Host,
+			"site_id": network_health.MeasuredBy,
 		}
 		network_health_fields := make(map[string]interface{})
 
-		for _, response := range network_health.Response {
+		for _, response := range *network_health.Response {
 
 			network_health_fields[internal.SnakeCase("overall_health_score")] = response.HealthScore
 			network_health_fields[internal.SnakeCase("overall_total_count")] = response.TotalCount
@@ -124,7 +150,7 @@ func (d *Dnac) Gather(acc telegraf.Accumulator) error {
 			network_health_fields[internal.SnakeCase("overall_bad_count")] = response.BadCount
 		}
 
-		for _, health_dist := range network_health.HealthDistirubution {
+		for _, health_dist := range *network_health.HealthDistirubution {
 			network_health_fields[internal.SnakeCase(health_dist.Category+"_health_score")] = health_dist.HealthScore
 			network_health_fields[internal.SnakeCase(health_dist.Category+"_total_count")] = health_dist.TotalCount
 			network_health_fields[internal.SnakeCase(health_dist.Category+"_bad_count")] = health_dist.BadCount

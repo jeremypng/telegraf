@@ -182,7 +182,7 @@ require (
 	modernc.org/sqlite v1.10.8
 )
 
-require github.com/cisco-en-programmability/dnacenter-go-sdk v0.1.1-0.20211102231117-57451118b07d
+require github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.1.1-test-telegraf
 
 require (
 	cloud.google.com/go v0.93.3 // indirect
@@ -258,6 +258,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20200307190119-3430c5407db8 // indirect
 	github.com/jackc/pgtype v1.3.0 // indirect
 	github.com/jaegertracing/jaeger v1.26.0 // indirect
+	github.com/jarcoal/httpmock v1.1.0
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
 	github.com/jcmturner/gofork v1.0.0 // indirect
@@ -369,4 +370,6 @@ replace github.com/mdlayher/apcupsd => github.com/influxdata/apcupsd v0.0.0-2021
 //Replacing with the pseudo-version works around this.
 replace golang.zx2c4.com/wireguard v0.0.20200121 => golang.zx2c4.com/wireguard v0.0.0-20200121152719-05b03c675090
 
-//replace github.com/cisco-en-programmability/dnacenter-go-sdk => github.com/jeremypng/dnacenter-go-sdk v0.1.1-0.20211102231117-57451118b07d
+replace github.com/cisco-en-programmability/dnacenter-go-sdk/v3 => github.com/jeremypng/dnacenter-go-sdk/v3 v3.1.1-test-telegraf
+
+// replace github.com/cisco-en-programmability/dnacenter-go-sdk/v3 => ../dnacenter-go-sdk
