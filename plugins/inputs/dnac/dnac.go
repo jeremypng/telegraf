@@ -5,7 +5,6 @@ package dnac
 import (
 	"net/url"
 
-	// dnac_sdk "github.com/cisco-en-programmability/dnacenter-go-sdk/sdk"
 	dnac_sdk "github.com/cisco-en-programmability/dnacenter-go-sdk/v3/sdk"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
@@ -75,9 +74,11 @@ func (d *Dnac) Gather(acc telegraf.Accumulator) error {
 		return url_err
 	}
 
-	err = d.InitClient()
-	if err != nil {
-		return err
+	if d.Client == nil {
+		err = d.InitClient()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = d.Client.AuthClient()

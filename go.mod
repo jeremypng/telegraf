@@ -182,7 +182,7 @@ require (
 	modernc.org/sqlite v1.10.8
 )
 
-require github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.1.1-test-telegraf
+require github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.4.0
 
 require (
 	cloud.google.com/go v0.93.3 // indirect
@@ -370,6 +370,6 @@ replace github.com/mdlayher/apcupsd => github.com/influxdata/apcupsd v0.0.0-2021
 //Replacing with the pseudo-version works around this.
 replace golang.zx2c4.com/wireguard v0.0.20200121 => golang.zx2c4.com/wireguard v0.0.0-20200121152719-05b03c675090
 
-replace github.com/cisco-en-programmability/dnacenter-go-sdk/v3 => github.com/jeremypng/dnacenter-go-sdk/v3 v3.1.1-test-telegraf
+// replace github.com/cisco-en-programmability/dnacenter-go-sdk/v3 => github.com/jeremypng/dnacenter-go-sdk/v3 v3.1.1-test-telegraf
 
 // replace github.com/cisco-en-programmability/dnacenter-go-sdk/v3 => ../dnacenter-go-sdk

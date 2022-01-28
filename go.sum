@@ -478,8 +478,12 @@ github.com/cilium/ebpf v0.4.0/go.mod h1:4tRaxcgiL706VnOzHOdBlY8IEAIdxINsQBcU4xJJ
 github.com/cilium/ebpf v0.6.2/go.mod h1:4tRaxcgiL706VnOzHOdBlY8IEAIdxINsQBcU4xJJXRs=
 github.com/circonus-labs/circonus-gometrics v2.3.1+incompatible/go.mod h1:nmEj6Dob7S7YxXgwXpfOuvO54S+tGdZdw9fuRZt25Ag=
 github.com/circonus-labs/circonusllhist v0.1.3/go.mod h1:kMXHVDlOchFAehlya5ePtbp5jckzBHf4XRpQvBOLI+I=
-github.com/cisco-en-programmability/dnacenter-go-sdk v0.1.1-0.20211102231117-57451118b07d h1:MNMj7LSSnGT+q1tqxFRyAoeEOjldsQ3V08y8AieEm7g=
-github.com/cisco-en-programmability/dnacenter-go-sdk v0.1.1-0.20211102231117-57451118b07d/go.mod h1:Wub3pzq2aLO5ZjBllBw9N9t8n6v7yaZoG3IFTrtq6bQ=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.2.0 h1:Y3WlvFfRZaH74ZraK7E2bQETfp4HCRypVh/bKKh2ye8=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.2.0/go.mod h1:VR6YN5I+WTSPOjNWiqIx6YPULwZWE0waW2yRLQq9ETQ=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.3.1 h1:hRLnewHUN+Ad6Mh646pqB6qWiDlNkUFWBgWgIIlBJ18=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.3.1/go.mod h1:VR6YN5I+WTSPOjNWiqIx6YPULwZWE0waW2yRLQq9ETQ=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.4.0 h1:UtNT8CWeP+DyqSy/LO9wwm4St81+KUOG4yn8q4r7A2w=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.4.0/go.mod h1:VR6YN5I+WTSPOjNWiqIx6YPULwZWE0waW2yRLQq9ETQ=
 github.com/cisco-ie/nx-telemetry-proto v0.0.0-20190531143454-82441e232cf6 h1:57RI0wFkG/smvVTcz7F43+R0k+Hvci3jAVQF9lyMoOo=
 github.com/cisco-ie/nx-telemetry-proto v0.0.0-20190531143454-82441e232cf6/go.mod h1:ugEfq4B8T8ciw/h5mCkgdiDRFS4CkqqhH2dymDB4knc=
 github.com/clbanning/x2j v0.0.0-20191024224557-825249438eec/go.mod h1:jMjuTZXRI4dUb/I5gc9Hdhagfvm9+RyrPryS/auMzxE=
@@ -1298,6 +1302,8 @@ github.com/jaegertracing/jaeger v1.26.0 h1:4LbUdb9l/Mx83zYvjLbkrayheX+Aga26NEI+f
 github.com/jaegertracing/jaeger v1.26.0/go.mod h1:SwHsl1PLZVAdkQTPrziQ+4xV9FxzJXRvTDW1YrUIWEA=
 github.com/james4k/rcon v0.0.0-20120923215419-8fbb8268b60a h1:JxcWget6X/VfBMKxPIc28Jel37LGREut2fpV+ObkwJ0=
 github.com/james4k/rcon v0.0.0-20120923215419-8fbb8268b60a/go.mod h1:1qNVsDcmNQDsAXYfUuF/Z0rtK5eT8x9D6Pi7S3PjXAg=
+github.com/jarcoal/httpmock v1.1.0 h1:F47ChZj1Y2zFsCXxNkBPwNNKnAyOATcdQibk0qEdVCE=
+github.com/jarcoal/httpmock v1.1.0/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
 github.com/jcmturner/aescts/v2 v2.0.0 h1:9YKLH6ey7H4eDBXW8khjYslgyqG2xZikXP0EQFKrle8=
 github.com/jcmturner/aescts/v2 v2.0.0/go.mod h1:AiaICIRyfYg35RUkr8yESTqvSy7csK90qZ5xfvvsoNs=
 github.com/jcmturner/dnsutils/v2 v2.0.0 h1:lltnkeZGL0wILNvrNiVCR6Ro5PGU/SeBvVO/8c/iPbo=
@@ -1311,6 +1317,8 @@ github.com/jcmturner/gokrb5/v8 v8.4.2 h1:6ZIM6b/JJN0X8UM43ZOM6Z4SJzla+a/u7scXFJz
 github.com/jcmturner/gokrb5/v8 v8.4.2/go.mod h1:sb+Xq/fTY5yktf/VxLsE3wlfPqQjp0aWNYyvBVK62bc=
 github.com/jcmturner/rpc/v2 v2.0.3 h1:7FXXj8Ti1IaVFpSAziCZWNzbNuZmnvw/i6CqLNdWfZY=
 github.com/jcmturner/rpc/v2 v2.0.3/go.mod h1:VUJYCIDm3PVOEHw8sgt091/20OJjskO/YJki3ELg/Hc=
+github.com/jeremypng/dnacenter-go-sdk/v3 v3.1.1-test-telegraf h1:PAmIifmfoMEsJKISCWTsr2YKmOzush3WJEUJJIwRJ50=
+github.com/jeremypng/dnacenter-go-sdk/v3 v3.1.1-test-telegraf/go.mod h1:VR6YN5I+WTSPOjNWiqIx6YPULwZWE0waW2yRLQq9ETQ=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jgautheron/goconst v1.4.0/go.mod h1:aAosetZ5zaeC/2EfMeRswtxUFBpe2Hr7HzkgX4fanO4=
 github.com/jhump/protoreflect v1.6.0/go.mod h1:eaTn3RZAmMBcV0fifFvlm6VHNz3wSkYyXYWUh7ymB74=
