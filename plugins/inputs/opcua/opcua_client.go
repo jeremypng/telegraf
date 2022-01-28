@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gopcua/opcua"
 	"github.com/gopcua/opcua/ua"
+
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/internal/choice"
@@ -17,23 +19,28 @@ import (
 	"github.com/influxdata/telegraf/selfstat"
 )
 
+type OpcuaWorkarounds struct {
+	AdditionalValidStatusCodes []string `toml:"additional_valid_status_codes"`
+}
+
 // OpcUA type
 type OpcUA struct {
-	MetricName     string          `toml:"name"`
-	Endpoint       string          `toml:"endpoint"`
-	SecurityPolicy string          `toml:"security_policy"`
-	SecurityMode   string          `toml:"security_mode"`
-	Certificate    string          `toml:"certificate"`
-	PrivateKey     string          `toml:"private_key"`
-	Username       string          `toml:"username"`
-	Password       string          `toml:"password"`
-	Timestamp      string          `toml:"timestamp"`
-	AuthMethod     string          `toml:"auth_method"`
-	ConnectTimeout config.Duration `toml:"connect_timeout"`
-	RequestTimeout config.Duration `toml:"request_timeout"`
-	RootNodes      []NodeSettings  `toml:"nodes"`
-	Groups         []GroupSettings `toml:"group"`
-	Log            telegraf.Logger `toml:"-"`
+	MetricName     string           `toml:"name"`
+	Endpoint       string           `toml:"endpoint"`
+	SecurityPolicy string           `toml:"security_policy"`
+	SecurityMode   string           `toml:"security_mode"`
+	Certificate    string           `toml:"certificate"`
+	PrivateKey     string           `toml:"private_key"`
+	Username       string           `toml:"username"`
+	Password       string           `toml:"password"`
+	Timestamp      string           `toml:"timestamp"`
+	AuthMethod     string           `toml:"auth_method"`
+	ConnectTimeout config.Duration  `toml:"connect_timeout"`
+	RequestTimeout config.Duration  `toml:"request_timeout"`
+	RootNodes      []NodeSettings   `toml:"nodes"`
+	Groups         []GroupSettings  `toml:"group"`
+	Workarounds    OpcuaWorkarounds `toml:"workarounds"`
+	Log            telegraf.Logger  `toml:"-"`
 
 	nodes       []Node
 	nodeData    []OPCData
@@ -49,9 +56,9 @@ type OpcUA struct {
 	client *opcua.Client
 	req    *ua.ReadRequest
 	opts   []opcua.Option
+	codes  []ua.StatusCode
 }
 
-// OPCTag type
 type NodeSettings struct {
 	FieldName      string     `toml:"name"`
 	Namespace      string     `toml:"namespace"`
@@ -180,6 +187,11 @@ const sampleConfig = `
   #  {name="", namespace="", identifier_type="", identifier=""},
   #  {name="", namespace="", identifier_type="", identifier=""},
   #]
+
+  ## Enable workarounds required by some devices to work correctly
+  # [inputs.opcua.workarounds]
+    ## Set additional valid status codes, StatusOK (0x0) is always considered valid
+    # additional_valid_status_codes = ["0xC0"]
 `
 
 // Description will appear directly above the plugin definition in the config file
@@ -216,6 +228,11 @@ func (o *OpcUA) Init() error {
 		return err
 	}
 
+	err = o.setupWorkarounds()
+	if err != nil {
+		return err
+	}
+
 	tags := map[string]string{
 		"endpoint": o.Endpoint,
 	}
@@ -242,14 +259,14 @@ func (o *OpcUA) validateEndpoint() error {
 	//search security policy type
 	switch o.SecurityPolicy {
 	case "None", "Basic128Rsa15", "Basic256", "Basic256Sha256", "auto":
-		break
+		// Valid security policy type - do nothing.
 	default:
 		return fmt.Errorf("invalid security type '%s' in '%s'", o.SecurityPolicy, o.MetricName)
 	}
 	//search security mode type
 	switch o.SecurityMode {
 	case "None", "Sign", "SignAndEncrypt", "auto":
-		break
+		// Valid security mode type - do nothing.
 	default:
 		return fmt.Errorf("invalid security type '%s' in '%s'", o.SecurityMode, o.MetricName)
 	}
@@ -384,7 +401,7 @@ func (o *OpcUA) validateOPCTags() error {
 		//search identifier type
 		switch node.tag.IdentifierType {
 		case "s", "i", "g", "b":
-			break
+			// Valid identifier type - do nothing.
 		default:
 			return fmt.Errorf("invalid identifier type '%s' in '%s'", node.tag.IdentifierType, node.tag.FieldName)
 		}
@@ -468,16 +485,38 @@ func (o *OpcUA) setupOptions() error {
 
 	if o.Certificate == "" && o.PrivateKey == "" {
 		if o.SecurityPolicy != "None" || o.SecurityMode != "None" {
-			o.Certificate, o.PrivateKey, err = generateCert("urn:telegraf:gopcua:client", 2048, o.Certificate, o.PrivateKey, (365 * 24 * time.Hour))
+			o.Certificate, o.PrivateKey, err = generateCert("urn:telegraf:gopcua:client", 2048, o.Certificate, o.PrivateKey, 365*24*time.Hour)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	o.opts, err = generateClientOpts(endpoints, o.Certificate, o.PrivateKey, o.SecurityPolicy, o.SecurityMode, o.AuthMethod, o.Username, o.Password, time.Duration(o.RequestTimeout))
+	o.opts, err = o.generateClientOpts(endpoints)
 
 	return err
+}
+
+func (o *OpcUA) setupWorkarounds() error {
+	if len(o.Workarounds.AdditionalValidStatusCodes) != 0 {
+		for _, c := range o.Workarounds.AdditionalValidStatusCodes {
+			val, err := strconv.ParseInt(c, 0, 32) // setting 32 bits to allow for safe conversion
+			if err != nil {
+				return err
+			}
+			o.codes = append(o.codes, ua.StatusCode(uint32(val)))
+		}
+	}
+	return nil
+}
+
+func (o *OpcUA) checkStatusCode(code ua.StatusCode) bool {
+	for _, val := range o.codes {
+		if val == code {
+			return true
+		}
+	}
+	return false
 }
 
 func (o *OpcUA) getData() error {
@@ -489,7 +528,7 @@ func (o *OpcUA) getData() error {
 	o.ReadSuccess.Incr(1)
 	for i, d := range resp.Results {
 		o.nodeData[i].Quality = d.Status
-		if d.Status != ua.StatusOK {
+		if !o.checkStatusCode(d.Status) {
 			o.Log.Errorf("status not OK for node %v: %v", o.nodes[i].tag.FieldName, d.Status)
 			continue
 		}
@@ -553,7 +592,7 @@ func (o *OpcUA) Gather(acc telegraf.Accumulator) error {
 	}
 
 	for i, n := range o.nodes {
-		if o.nodeData[i].Quality == ua.StatusOK {
+		if o.checkStatusCode(o.nodeData[i].Quality) {
 			fields := make(map[string]interface{})
 			tags := map[string]string{
 				"id": n.idStr,
@@ -564,7 +603,6 @@ func (o *OpcUA) Gather(acc telegraf.Accumulator) error {
 
 			fields[o.nodeData[i].TagName] = o.nodeData[i].Value
 			fields["Quality"] = strings.TrimSpace(fmt.Sprint(o.nodeData[i].Quality))
-			acc.AddFields(n.metricName, fields, tags)
 
 			switch o.Timestamp {
 			case "server":
@@ -593,6 +631,7 @@ func init() {
 			Certificate:    "/etc/telegraf/cert.pem",
 			PrivateKey:     "/etc/telegraf/key.pem",
 			AuthMethod:     "Anonymous",
+			codes:          []ua.StatusCode{ua.StatusOK},
 		}
 	})
 }
