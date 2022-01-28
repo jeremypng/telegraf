@@ -5,15 +5,13 @@ The sample config file is generated from a results of the `SampleConfig()` and
 
 You can generate a full sample
 config:
-
-```shell
+```
 telegraf config
 ```
 
 You can also generate the config for a particular plugin using the `-usage`
 option:
-
-```shell
+```
 telegraf --usage influxdb
 ```
 
@@ -23,7 +21,6 @@ In the config file we use 2-space indention.  Since the config is
 [TOML](https://github.com/toml-lang/toml) the indention has no meaning.
 
 Documentation is double commented, full sentences, and ends with a period.
-
 ```toml
   ## This text describes what an the exchange_type option does.
   # exchange_type = "topic"
@@ -32,15 +29,14 @@ Documentation is double commented, full sentences, and ends with a period.
 Try to give every parameter a default value whenever possible.  If an
 parameter does not have a default or must frequently be changed then have it
 uncommented.
-
 ```toml
   ## Brokers are the AMQP brokers to connect to.
   brokers = ["amqp://localhost:5672"]
 ```
 
+
 Options where the default value is usually sufficient are normally commented
 out.  The commented out value is the default.
-
 ```toml
   ## What an exchange type is.
   # exchange_type = "topic"
@@ -48,7 +44,6 @@ out.  The commented out value is the default.
 
 If you want to show an example of a possible setting filled out that is
 different from the default, show both:
-
 ```toml
   ## Static routing key.  Used when no routing_tag is set or as a fallback
   ## when the tag specified in routing tag is not found.
@@ -58,7 +53,6 @@ different from the default, show both:
 
 Unless parameters are closely related, add a space between them.  Usually
 parameters is closely related have a single description.
-
 ```toml
   ## If true, queue will be declared as an exclusive queue.
   # queue_exclusive = false

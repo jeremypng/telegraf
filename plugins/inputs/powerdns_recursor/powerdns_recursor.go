@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -20,8 +21,6 @@ type PowerdnsRecursor struct {
 	UnixSockets []string `toml:"unix_sockets"`
 	SocketDir   string   `toml:"socket_dir"`
 	SocketMode  string   `toml:"socket_mode"`
-
-	Log telegraf.Logger `toml:"-"`
 
 	mode uint32
 }
@@ -126,7 +125,7 @@ func (p *PowerdnsRecursor) gatherServer(address string, acc telegraf.Accumulator
 	metrics := string(buf)
 
 	// Process data
-	fields := p.parseResponse(metrics)
+	fields := parseResponse(metrics)
 
 	// Add server socket as a tag
 	tags := map[string]string{"server": address}
@@ -136,7 +135,7 @@ func (p *PowerdnsRecursor) gatherServer(address string, acc telegraf.Accumulator
 	return conn.Close()
 }
 
-func (p *PowerdnsRecursor) parseResponse(metrics string) map[string]interface{} {
+func parseResponse(metrics string) map[string]interface{} {
 	values := make(map[string]interface{})
 
 	s := strings.Split(metrics, "\n")
@@ -149,7 +148,8 @@ func (p *PowerdnsRecursor) parseResponse(metrics string) map[string]interface{} 
 
 		i, err := strconv.ParseInt(m[1], 10, 64)
 		if err != nil {
-			p.Log.Errorf("error parsing integer for metric %q: %s", metric, err.Error())
+			log.Printf("E! [inputs.powerdns_recursor] error parsing integer for metric %q: %s",
+				metric, err.Error())
 			continue
 		}
 		values[m[0]] = i

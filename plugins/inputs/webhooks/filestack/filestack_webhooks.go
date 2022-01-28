@@ -3,25 +3,23 @@ package filestack
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-
 	"github.com/influxdata/telegraf"
 )
 
 type FilestackWebhook struct {
 	Path string
 	acc  telegraf.Accumulator
-	log  telegraf.Logger
 }
 
-func (fs *FilestackWebhook) Register(router *mux.Router, acc telegraf.Accumulator, log telegraf.Logger) {
+func (fs *FilestackWebhook) Register(router *mux.Router, acc telegraf.Accumulator) {
 	router.HandleFunc(fs.Path, fs.eventHandler).Methods("POST")
 
-	fs.log = log
-	fs.log.Infof("Started the webhooks_filestack on %s", fs.Path)
+	log.Printf("I! Started the webhooks_filestack on %s\n", fs.Path)
 	fs.acc = acc
 }
 

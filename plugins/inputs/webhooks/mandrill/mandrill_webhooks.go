@@ -3,27 +3,25 @@ package mandrill
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/influxdata/telegraf"
-
 	"github.com/gorilla/mux"
+	"github.com/influxdata/telegraf"
 )
 
 type MandrillWebhook struct {
 	Path string
 	acc  telegraf.Accumulator
-	log  telegraf.Logger
 }
 
-func (md *MandrillWebhook) Register(router *mux.Router, acc telegraf.Accumulator, log telegraf.Logger) {
+func (md *MandrillWebhook) Register(router *mux.Router, acc telegraf.Accumulator) {
 	router.HandleFunc(md.Path, md.returnOK).Methods("HEAD")
 	router.HandleFunc(md.Path, md.eventHandler).Methods("POST")
 
-	md.log = log
-	md.log.Infof("Started the webhooks_mandrill on %s", md.Path)
+	log.Printf("I! Started the webhooks_mandrill on %s\n", md.Path)
 	md.acc = acc
 }
 

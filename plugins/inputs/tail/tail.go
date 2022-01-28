@@ -288,17 +288,25 @@ func (t *Tail) tailNewFiles(fromBeginning bool) error {
 }
 
 // ParseLine parses a line of text.
-func parseLine(parser parsers.Parser, line string) ([]telegraf.Metric, error) {
+func parseLine(parser parsers.Parser, line string, firstLine bool) ([]telegraf.Metric, error) {
 	switch parser.(type) {
 	case *csv.Parser:
-		m, err := parser.Parse([]byte(line))
+		// The csv parser parses headers in Parse and skips them in ParseLine.
+		// As a temporary solution call Parse only when getting the first
+		// line from the file.
+		if firstLine {
+			return parser.Parse([]byte(line))
+		}
+
+		m, err := parser.ParseLine(line)
 		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return nil, nil
-			}
 			return nil, err
 		}
-		return m, err
+
+		if m != nil {
+			return []telegraf.Metric{m}, nil
+		}
+		return []telegraf.Metric{}, nil
 	default:
 		return parser.Parse([]byte(line))
 	}
@@ -307,6 +315,8 @@ func parseLine(parser parsers.Parser, line string) ([]telegraf.Metric, error) {
 // Receiver is launched as a goroutine to continuously watch a tailed logfile
 // for changes, parse any incoming msgs, and add to the accumulator.
 func (t *Tail) receiver(parser parsers.Parser, tailer *tail.Tail) {
+	var firstLine = true
+
 	// holds the individual lines of multi-line log entries.
 	var buffer bytes.Buffer
 
@@ -368,12 +378,13 @@ func (t *Tail) receiver(parser parsers.Parser, tailer *tail.Tail) {
 			continue
 		}
 
-		metrics, err := parseLine(parser, text)
+		metrics, err := parseLine(parser, text, firstLine)
 		if err != nil {
 			t.Log.Errorf("Malformed log line in %q: [%q]: %s",
 				tailer.Filename, text, err.Error())
 			continue
 		}
+		firstLine = false
 
 		if t.PathTag != "" {
 			for _, metric := range metrics {

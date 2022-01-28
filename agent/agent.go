@@ -192,39 +192,32 @@ func (a *Agent) initPlugins() error {
 				input.LogName(), err)
 		}
 	}
-	for _, parser := range a.Config.Parsers {
-		err := parser.Init()
-		if err != nil {
-			return fmt.Errorf("could not initialize parser %s::%s: %v",
-				parser.Config.DataFormat, parser.Config.Parent, err)
-		}
-	}
 	for _, processor := range a.Config.Processors {
 		err := processor.Init()
 		if err != nil {
 			return fmt.Errorf("could not initialize processor %s: %v",
-				processor.LogName(), err)
+				processor.Config.Name, err)
 		}
 	}
 	for _, aggregator := range a.Config.Aggregators {
 		err := aggregator.Init()
 		if err != nil {
 			return fmt.Errorf("could not initialize aggregator %s: %v",
-				aggregator.LogName(), err)
+				aggregator.Config.Name, err)
 		}
 	}
 	for _, processor := range a.Config.AggProcessors {
 		err := processor.Init()
 		if err != nil {
 			return fmt.Errorf("could not initialize processor %s: %v",
-				processor.LogName(), err)
+				processor.Config.Name, err)
 		}
 	}
 	for _, output := range a.Config.Outputs {
 		err := output.Init()
 		if err != nil {
 			return fmt.Errorf("could not initialize output %s: %v",
-				output.LogName(), err)
+				output.Config.Name, err)
 		}
 	}
 	return nil

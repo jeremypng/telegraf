@@ -18,16 +18,15 @@ func TestTable(t *testing.T) {
 	t.Skip("Skipping test due to connect failures")
 
 	d := IfName{}
-	err := d.Init()
-	require.NoError(t, err)
-	tab, err := d.makeTable("1.3.6.1.2.1.2.2.1.2")
+	d.Init()
+	tab, err := d.makeTable("IF-MIB::ifTable")
 	require.NoError(t, err)
 
-	clientConfig := snmp.ClientConfig{
+	config := snmp.ClientConfig{
 		Version: 2,
 		Timeout: config.Duration(5 * time.Second), // Doesn't work with 0 timeout
 	}
-	gs, err := snmp.NewWrapper(clientConfig)
+	gs, err := snmp.NewWrapper(config)
 	require.NoError(t, err)
 	err = gs.SetAgent("127.0.0.1")
 	require.NoError(t, err)
@@ -36,7 +35,7 @@ func TestTable(t *testing.T) {
 	require.NoError(t, err)
 
 	// Could use ifIndex but oid index is always the same
-	m, err := buildMap(gs, tab)
+	m, err := buildMap(gs, tab, "ifDescr")
 	require.NoError(t, err)
 	require.NotEmpty(t, m)
 }

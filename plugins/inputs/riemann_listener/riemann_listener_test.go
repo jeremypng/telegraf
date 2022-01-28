@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	riemanngo "github.com/riemann/riemann-go-client"
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/testutil"
+	riemanngo "github.com/riemann/riemann-go-client"
+	"github.com/stretchr/testify/require"
+	"gotest.tools/assert"
 )
 
 func TestSocketListener_tcp(t *testing.T) {
@@ -28,26 +28,26 @@ func TestSocketListener_tcp(t *testing.T) {
 	testStats(t)
 	testMissingService(t)
 }
-
 func testStats(t *testing.T) {
 	c := riemanngo.NewTCPClient("127.0.0.1:5555", 5*time.Second)
 	err := c.Connect()
-	require.NoError(t, err)
+	if err != nil {
+		log.Println("Error")
+		panic(err)
+	}
 	defer c.Close()
 	result, err := riemanngo.SendEvent(c, &riemanngo.Event{
 		Service: "hello",
 	})
-	require.NoError(t, err)
-	require.Equal(t, result.GetOk(), true)
+	assert.Equal(t, result.GetOk(), true)
 }
-
 func testMissingService(t *testing.T) {
 	c := riemanngo.NewTCPClient("127.0.0.1:5555", 5*time.Second)
 	err := c.Connect()
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 	defer c.Close()
 	result, err := riemanngo.SendEvent(c, &riemanngo.Event{})
-	require.Equal(t, false, result.GetOk())
-	require.Equal(t, "No Service Name", result.GetError())
-	require.NoError(t, err)
+	assert.Equal(t, result.GetOk(), false)
 }

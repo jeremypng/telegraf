@@ -229,7 +229,7 @@ func (b *Buffer) next(index int) int {
 	return index
 }
 
-// nextby returns the index that is count newer with wrapping.
+// next returns the index that is count newer with wrapping.
 func (b *Buffer) nextby(index, count int) int {
 	index += count
 	index %= b.cap

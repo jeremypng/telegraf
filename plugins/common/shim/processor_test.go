@@ -8,12 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/plugins/parsers"
 	"github.com/influxdata/telegraf/plugins/serializers"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessorShim(t *testing.T) {
@@ -96,8 +95,8 @@ type testProcessor struct {
 }
 
 func (p *testProcessor) Apply(in ...telegraf.Metric) []telegraf.Metric {
-	for _, m := range in {
-		m.AddTag(p.tagName, p.tagValue)
+	for _, metric := range in {
+		metric.AddTag(p.tagName, p.tagValue)
 	}
 	return in
 }

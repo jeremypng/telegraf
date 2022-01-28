@@ -47,7 +47,7 @@ type Serializer interface {
 // Config is a struct that covers the data types needed for all serializer types,
 // and can be used to instantiate _any_ of the serializers.
 type Config struct {
-	// DataFormat can be one of the serializer types listed in NewSerializer.
+	// Dataformat can be one of the serializer types listed in NewSerializer.
 	DataFormat string `toml:"data_format"`
 
 	// Carbon2 metric format.
@@ -104,9 +104,6 @@ type Config struct {
 	// When enabled forward slash (/) and comma (,) will be accepted
 	WavefrontUseStrict bool `toml:"wavefront_use_strict"`
 
-	// Convert "_" in prefixes to "." for Wavefront
-	WavefrontDisablePrefixConversion bool `toml:"wavefront_disable_prefix_conversion"`
-
 	// Include the metric timestamp on each sample.
 	PrometheusExportTimestamp bool `toml:"prometheus_export_timestamp"`
 
@@ -137,7 +134,7 @@ func NewSerializer(config *Config) (Serializer, error) {
 	case "carbon2":
 		serializer, err = NewCarbon2Serializer(config.Carbon2Format, config.Carbon2SanitizeReplaceChar)
 	case "wavefront":
-		serializer, err = NewWavefrontSerializer(config.Prefix, config.WavefrontUseStrict, config.WavefrontSourceOverride, config.WavefrontDisablePrefixConversion)
+		serializer, err = NewWavefrontSerializer(config.Prefix, config.WavefrontUseStrict, config.WavefrontSourceOverride)
 	case "prometheus":
 		serializer, err = NewPrometheusSerializer(config)
 	case "prometheusremotewrite":
@@ -145,7 +142,7 @@ func NewSerializer(config *Config) (Serializer, error) {
 	case "msgpack":
 		serializer, err = NewMsgpackSerializer()
 	default:
-		err = fmt.Errorf("invalid data format: %s", config.DataFormat)
+		err = fmt.Errorf("Invalid data format: %s", config.DataFormat)
 	}
 	return serializer, err
 }
@@ -190,8 +187,8 @@ func NewPrometheusSerializer(config *Config) (Serializer, error) {
 	})
 }
 
-func NewWavefrontSerializer(prefix string, useStrict bool, sourceOverride []string, disablePrefixConversions bool) (Serializer, error) {
-	return wavefront.NewSerializer(prefix, useStrict, sourceOverride, disablePrefixConversions)
+func NewWavefrontSerializer(prefix string, useStrict bool, sourceOverride []string) (Serializer, error) {
+	return wavefront.NewSerializer(prefix, useStrict, sourceOverride)
 }
 
 func NewJSONSerializer(timestampUnits time.Duration, timestampFormat string) (Serializer, error) {

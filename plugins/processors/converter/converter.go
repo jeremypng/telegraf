@@ -328,7 +328,7 @@ func (p *Converter) convertFields(metric telegraf.Metric) {
 	}
 }
 
-func toBool(v interface{}) (val bool, ok bool) {
+func toBool(v interface{}) (bool, bool) {
 	switch value := v.(type) {
 	case int64:
 		return value != 0, true

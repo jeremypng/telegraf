@@ -9,11 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 var DefaultTime = func() time.Time {
@@ -850,10 +849,7 @@ func TestStreamParserProducesAllAvailableMetrics(t *testing.T) {
 	parser := NewStreamParser(r)
 	parser.SetTimeFunc(DefaultTime)
 
-	go func() {
-		_, err := w.Write([]byte("metric value=1\nmetric2 value=1\n"))
-		require.NoError(t, err)
-	}()
+	go w.Write([]byte("metric value=1\nmetric2 value=1\n"))
 
 	_, err := parser.Next()
 	require.NoError(t, err)

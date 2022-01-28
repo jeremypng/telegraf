@@ -13,10 +13,10 @@ type Serializer struct {
 	TimestampFormat string
 }
 
-func NewSerializer(timestampUnits time.Duration, timestampFormat string) (*Serializer, error) {
+func NewSerializer(timestampUnits time.Duration, timestampformat string) (*Serializer, error) {
 	s := &Serializer{
 		TimestampUnits:  truncateDuration(timestampUnits),
-		TimestampFormat: timestampFormat,
+		TimestampFormat: timestampformat,
 	}
 	return s, nil
 }
@@ -61,7 +61,8 @@ func (s *Serializer) createObject(metric telegraf.Metric) map[string]interface{}
 
 	fields := make(map[string]interface{}, len(metric.FieldList()))
 	for _, field := range metric.FieldList() {
-		if fv, ok := field.Value.(float64); ok {
+		switch fv := field.Value.(type) {
+		case float64:
 			// JSON does not support these special values
 			if math.IsNaN(fv) || math.IsInf(fv, 0) {
 				continue

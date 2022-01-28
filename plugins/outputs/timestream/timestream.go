@@ -2,21 +2,22 @@ package timestream
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"reflect"
 	"strconv"
-	"sync"
 	"time"
+
+	"github.com/influxdata/telegraf"
+	"github.com/influxdata/telegraf/plugins/outputs"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/timestreamwrite"
 	"github.com/aws/aws-sdk-go-v2/service/timestreamwrite/types"
 	"github.com/aws/smithy-go"
-
-	"github.com/influxdata/telegraf"
 	internalaws "github.com/influxdata/telegraf/config/aws"
-	"github.com/influxdata/telegraf/plugins/outputs"
 )
 
 type (
@@ -32,7 +33,6 @@ type (
 		CreateTableMagneticStoreRetentionPeriodInDays int64             `toml:"create_table_magnetic_store_retention_period_in_days"`
 		CreateTableMemoryStoreRetentionPeriodInHours  int64             `toml:"create_table_memory_store_retention_period_in_hours"`
 		CreateTableTags                               map[string]string `toml:"create_table_tags"`
-		MaxWriteGoRoutinesCount                       int               `toml:"max_write_go_routines"`
 
 		Log telegraf.Logger
 		svc WriteClient
@@ -56,10 +56,6 @@ const (
 
 // MaxRecordsPerCall reflects Timestream limit of WriteRecords API call
 const MaxRecordsPerCall = 100
-
-// Default value for maximum number of parallel go routines to ingest/write data
-// when max_write_go_routines is not specified in the config
-const MaxWriteRoutinesDefault = 1
 
 var sampleConfig = `
   ## Amazon Region
@@ -173,10 +169,6 @@ var sampleConfig = `
   ## Specifies the Timestream table tags.
   ## Check Timestream documentation for more details
   # create_table_tags = { "foo" = "bar", "environment" = "dev"}
-  
-  ## Specify the maximum number of parallel go routines to ingest/write data
-  ## If not specified, defaulted to 1 go routines
-  max_write_go_routines = 25
 `
 
 // WriteFactory function provides a way to mock the client instantiation for testing purposes.
@@ -233,10 +225,6 @@ func (t *Timestream) Connect() error {
 		}
 	}
 
-	if t.MaxWriteGoRoutinesCount <= 0 {
-		t.MaxWriteGoRoutinesCount = MaxWriteRoutinesDefault
-	}
-
 	t.Log.Infof("Constructing Timestream client for '%s' mode", t.MappingMode)
 
 	svc, err := WriteFactory(&t.CredentialConfig)
@@ -282,55 +270,11 @@ func init() {
 
 func (t *Timestream) Write(metrics []telegraf.Metric) error {
 	writeRecordsInputs := t.TransformMetrics(metrics)
-
-	maxWriteJobs := t.MaxWriteGoRoutinesCount
-	numberOfWriteRecordsInputs := len(writeRecordsInputs)
-
-	if numberOfWriteRecordsInputs < maxWriteJobs {
-		maxWriteJobs = numberOfWriteRecordsInputs
-	}
-
-	var wg sync.WaitGroup
-	errs := make(chan error, numberOfWriteRecordsInputs)
-	writeJobs := make(chan *timestreamwrite.WriteRecordsInput, maxWriteJobs)
-
-	start := time.Now()
-
-	for i := 0; i < maxWriteJobs; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for writeJob := range writeJobs {
-				if err := t.writeToTimestream(writeJob, true); err != nil {
-					errs <- err
-				}
-			}
-		}()
-	}
-
-	for i := range writeRecordsInputs {
-		writeJobs <- writeRecordsInputs[i]
-	}
-
-	// Close channel once all jobs are added
-	close(writeJobs)
-
-	wg.Wait()
-	elapsed := time.Since(start)
-
-	close(errs)
-
-	t.Log.Infof("##WriteToTimestream - Metrics size: %d request size: %d time(ms): %d",
-		len(metrics), len(writeRecordsInputs), elapsed.Milliseconds())
-
-	// On partial failures, Telegraf will reject the entire batch of metrics and
-	// retry. writeToTimestream will return retryable exceptions only.
-	for err := range errs {
-		if err != nil {
+	for _, writeRecordsInput := range writeRecordsInputs {
+		if err := t.writeToTimestream(writeRecordsInput, true); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -388,12 +332,12 @@ func (t *Timestream) logWriteToTimestreamError(err error, tableName *string) {
 func (t *Timestream) createTableAndRetry(writeRecordsInput *timestreamwrite.WriteRecordsInput) error {
 	if t.CreateTableIfNotExists {
 		t.Log.Infof("Trying to create table '%s' in database '%s', as 'CreateTableIfNotExists' config key is 'true'.", *writeRecordsInput.TableName, t.DatabaseName)
-		err := t.createTable(writeRecordsInput.TableName)
-		if err == nil {
+		if err := t.createTable(writeRecordsInput.TableName); err != nil {
+			t.Log.Errorf("Failed to create table '%s' in database '%s': %s. Skipping metric!", *writeRecordsInput.TableName, t.DatabaseName, err)
+		} else {
 			t.Log.Infof("Table '%s' in database '%s' created. Retrying writing.", *writeRecordsInput.TableName, t.DatabaseName)
 			return t.writeToTimestream(writeRecordsInput, false)
 		}
-		t.Log.Errorf("Failed to create table '%s' in database '%s': %s. Skipping metric!", *writeRecordsInput.TableName, t.DatabaseName, err)
 	} else {
 		t.Log.Errorf("Not trying to create table '%s' in database '%s', as 'CreateTableIfNotExists' config key is 'false'. Skipping metric!", *writeRecordsInput.TableName, t.DatabaseName)
 	}
@@ -434,33 +378,35 @@ func (t *Timestream) createTable(tableName *string) error {
 // Telegraf Metrics are grouped by Name, Tag Keys and Time to use Timestream CommonAttributes.
 // Returns collection of write requests to be performed to Timestream.
 func (t *Timestream) TransformMetrics(metrics []telegraf.Metric) []*timestreamwrite.WriteRecordsInput {
-	writeRequests := make(map[string]*timestreamwrite.WriteRecordsInput, len(metrics))
+	writeRequests := make(map[uint64]*timestreamwrite.WriteRecordsInput, len(metrics))
 	for _, m := range metrics {
 		// build MeasureName, MeasureValue, MeasureValueType
 		records := t.buildWriteRecords(m)
 		if len(records) == 0 {
 			continue
 		}
-
-		var tableName string
-
-		if t.MappingMode == MappingModeSingleTable {
-			tableName = t.SingleTableName
-		}
-
-		if t.MappingMode == MappingModeMultiTable {
-			tableName = m.Name()
-		}
-
-		if curr, ok := writeRequests[tableName]; !ok {
+		id := hashFromMetricTimeNameTagKeys(m)
+		if curr, ok := writeRequests[id]; !ok {
+			// No current CommonAttributes/WriteRecordsInput found for current Telegraf Metric
+			dimensions := t.buildDimensions(m)
+			timeUnit, timeValue := getTimestreamTime(m.Time())
 			newWriteRecord := &timestreamwrite.WriteRecordsInput{
-				DatabaseName:     aws.String(t.DatabaseName),
-				TableName:        aws.String(tableName),
-				Records:          records,
-				CommonAttributes: &types.Record{},
+				DatabaseName: aws.String(t.DatabaseName),
+				Records:      records,
+				CommonAttributes: &types.Record{
+					Dimensions: dimensions,
+					Time:       aws.String(timeValue),
+					TimeUnit:   timeUnit,
+				},
+			}
+			if t.MappingMode == MappingModeSingleTable {
+				newWriteRecord.TableName = &t.SingleTableName
+			}
+			if t.MappingMode == MappingModeMultiTable {
+				newWriteRecord.TableName = aws.String(m.Name())
 			}
 
-			writeRequests[tableName] = newWriteRecord
+			writeRequests[id] = newWriteRecord
 		} else {
 			curr.Records = append(curr.Records, records...)
 		}
@@ -484,6 +430,27 @@ func (t *Timestream) TransformMetrics(metrics []telegraf.Metric) []*timestreamwr
 		}
 	}
 	return result
+}
+
+func hashFromMetricTimeNameTagKeys(m telegraf.Metric) uint64 {
+	h := fnv.New64a()
+	h.Write([]byte(m.Name()))
+	h.Write([]byte("\n"))
+	for _, tag := range m.TagList() {
+		if tag.Key == "" {
+			continue
+		}
+
+		h.Write([]byte(tag.Key))
+		h.Write([]byte("\n"))
+		h.Write([]byte(tag.Value))
+		h.Write([]byte("\n"))
+	}
+	b := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(b, uint64(m.Time().UnixNano()))
+	h.Write(b[:n])
+	h.Write([]byte("\n"))
+	return h.Sum64()
 }
 
 func (t *Timestream) buildDimensions(point telegraf.Metric) []types.Dimension {
@@ -511,9 +478,6 @@ func (t *Timestream) buildDimensions(point telegraf.Metric) []types.Dimension {
 // It returns an array of Timestream write records.
 func (t *Timestream) buildWriteRecords(point telegraf.Metric) []types.Record {
 	var records []types.Record
-
-	dimensions := t.buildDimensions(point)
-
 	for fieldName, fieldValue := range point.Fields() {
 		stringFieldValue, stringFieldValueType, ok := convertValue(fieldValue)
 		if !ok {
@@ -522,16 +486,10 @@ func (t *Timestream) buildWriteRecords(point telegraf.Metric) []types.Record {
 				fieldName, reflect.TypeOf(fieldValue))
 			continue
 		}
-
-		timeUnit, timeValue := getTimestreamTime(point.Time())
-
 		record := types.Record{
 			MeasureName:      aws.String(fieldName),
 			MeasureValueType: stringFieldValueType,
 			MeasureValue:     aws.String(stringFieldValue),
-			Dimensions:       dimensions,
-			Time:             aws.String(timeValue),
-			TimeUnit:         timeUnit,
 		}
 		records = append(records, record)
 	}
@@ -579,7 +537,7 @@ func getTimestreamTime(t time.Time) (timeUnit types.TimeUnit, timeValue string) 
 		timeUnit = types.TimeUnitNanoseconds
 		timeValue = strconv.FormatInt(nanosTime, 10)
 	}
-	return timeUnit, timeValue
+	return
 }
 
 // convertValue converts single Field value from Telegraf Metric and produces
@@ -637,7 +595,7 @@ func convertValue(v interface{}) (value string, valueType types.MeasureValueType
 	default:
 		// Skip unsupported type.
 		ok = false
-		return value, valueType, ok
+		return
 	}
-	return value, valueType, ok
+	return
 }

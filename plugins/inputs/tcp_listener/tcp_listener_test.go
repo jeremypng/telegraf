@@ -11,10 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/plugins/parsers"
 	"github.com/influxdata/telegraf/testutil"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -95,10 +96,10 @@ func TestHighTrafficTCP(t *testing.T) {
 	require.NoError(t, conn.(*net.TCPConn).CloseWrite())
 	buf := []byte{0}
 	_, err = conn.Read(buf)
-	require.Equal(t, err, io.EOF)
+	assert.Equal(t, err, io.EOF)
 	listener.Stop()
 
-	require.Equal(t, 100000, int(acc.NMetrics()))
+	assert.Equal(t, 100000, int(acc.NMetrics()))
 }
 
 func TestConnectTCP(t *testing.T) {
@@ -167,14 +168,14 @@ func TestConcurrentConns(t *testing.T) {
 	buf := make([]byte, 1500)
 	n, err := conn.Read(buf)
 	require.NoError(t, err)
-	require.Equal(t,
+	assert.Equal(t,
 		"Telegraf maximum concurrent TCP connections (2) reached, closing.\n"+
 			"You may want to increase max_tcp_connections in"+
 			" the Telegraf tcp listener configuration.\n",
 		string(buf[:n]))
 
 	_, err = conn.Read(buf)
-	require.Equal(t, io.EOF, err)
+	assert.Equal(t, io.EOF, err)
 }
 
 // Test that MaxTCPConnections is respected when max==1
@@ -202,14 +203,14 @@ func TestConcurrentConns1(t *testing.T) {
 	buf := make([]byte, 1500)
 	n, err := conn.Read(buf)
 	require.NoError(t, err)
-	require.Equal(t,
+	assert.Equal(t,
 		"Telegraf maximum concurrent TCP connections (1) reached, closing.\n"+
 			"You may want to increase max_tcp_connections in"+
 			" the Telegraf tcp listener configuration.\n",
 		string(buf[:n]))
 
 	_, err = conn.Read(buf)
-	require.Equal(t, io.EOF, err)
+	assert.Equal(t, io.EOF, err)
 }
 
 // Test that MaxTCPConnections is respected

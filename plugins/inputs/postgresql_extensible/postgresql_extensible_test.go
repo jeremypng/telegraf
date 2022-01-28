@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/plugins/inputs/postgresql"
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func queryRunner(t *testing.T, q query) *testutil.Accumulator {
@@ -76,27 +76,27 @@ func TestPostgresqlGeneratesMetricsIntegration(t *testing.T) {
 	metricsCounted := 0
 
 	for _, metric := range intMetrics {
-		require.True(t, acc.HasInt64Field("postgresql", metric))
+		assert.True(t, acc.HasInt64Field("postgresql", metric))
 		metricsCounted++
 	}
 
 	for _, metric := range int32Metrics {
-		require.True(t, acc.HasInt32Field("postgresql", metric))
+		assert.True(t, acc.HasInt32Field("postgresql", metric))
 		metricsCounted++
 	}
 
 	for _, metric := range floatMetrics {
-		require.True(t, acc.HasFloatField("postgresql", metric))
+		assert.True(t, acc.HasFloatField("postgresql", metric))
 		metricsCounted++
 	}
 
 	for _, metric := range stringMetrics {
-		require.True(t, acc.HasStringField("postgresql", metric))
+		assert.True(t, acc.HasStringField("postgresql", metric))
 		metricsCounted++
 	}
 
-	require.True(t, metricsCounted > 0)
-	require.Equal(t, len(floatMetrics)+len(intMetrics)+len(int32Metrics)+len(stringMetrics), metricsCounted)
+	assert.True(t, metricsCounted > 0)
+	assert.Equal(t, len(floatMetrics)+len(intMetrics)+len(int32Metrics)+len(stringMetrics), metricsCounted)
 }
 
 func TestPostgresqlQueryOutputTestsIntegration(t *testing.T) {
@@ -109,30 +109,30 @@ func TestPostgresqlQueryOutputTestsIntegration(t *testing.T) {
 	examples := map[string]func(*testutil.Accumulator){
 		"SELECT 10.0::float AS myvalue": func(acc *testutil.Accumulator) {
 			v, found := acc.FloatField(measurement, "myvalue")
-			require.True(t, found)
-			require.Equal(t, 10.0, v)
+			assert.True(t, found)
+			assert.Equal(t, 10.0, v)
 		},
 		"SELECT 10.0 AS myvalue": func(acc *testutil.Accumulator) {
 			v, found := acc.StringField(measurement, "myvalue")
-			require.True(t, found)
-			require.Equal(t, "10.0", v)
+			assert.True(t, found)
+			assert.Equal(t, "10.0", v)
 		},
 		"SELECT 'hello world' AS myvalue": func(acc *testutil.Accumulator) {
 			v, found := acc.StringField(measurement, "myvalue")
-			require.True(t, found)
-			require.Equal(t, "hello world", v)
+			assert.True(t, found)
+			assert.Equal(t, "hello world", v)
 		},
 		"SELECT true AS myvalue": func(acc *testutil.Accumulator) {
 			v, found := acc.BoolField(measurement, "myvalue")
-			require.True(t, found)
-			require.Equal(t, true, v)
+			assert.True(t, found)
+			assert.Equal(t, true, v)
 		},
 		"SELECT timestamp'1980-07-23' as ts, true AS myvalue": func(acc *testutil.Accumulator) {
 			expectedTime := time.Date(1980, 7, 23, 0, 0, 0, 0, time.UTC)
 			v, found := acc.BoolField(measurement, "myvalue")
-			require.True(t, found)
-			require.Equal(t, true, v)
-			require.True(t, acc.HasTimestamp(measurement, expectedTime))
+			assert.True(t, found)
+			assert.Equal(t, true, v)
+			assert.True(t, acc.HasTimestamp(measurement, expectedTime))
 		},
 	}
 
@@ -192,22 +192,22 @@ func TestPostgresqlFieldOutputIntegration(t *testing.T) {
 
 	for _, field := range intMetrics {
 		_, found := acc.Int64Field(measurement, field)
-		require.True(t, found, fmt.Sprintf("expected %s to be an integer", field))
+		assert.True(t, found, fmt.Sprintf("expected %s to be an integer", field))
 	}
 
 	for _, field := range int32Metrics {
 		_, found := acc.Int32Field(measurement, field)
-		require.True(t, found, fmt.Sprintf("expected %s to be an int32", field))
+		assert.True(t, found, fmt.Sprintf("expected %s to be an int32", field))
 	}
 
 	for _, field := range floatMetrics {
 		_, found := acc.FloatField(measurement, field)
-		require.True(t, found, fmt.Sprintf("expected %s to be a float64", field))
+		assert.True(t, found, fmt.Sprintf("expected %s to be a float64", field))
 	}
 
 	for _, field := range stringMetrics {
 		_, found := acc.StringField(measurement, field)
-		require.True(t, found, fmt.Sprintf("expected %s to be a str", field))
+		assert.True(t, found, fmt.Sprintf("expected %s to be a str", field))
 	}
 }
 
@@ -256,9 +256,9 @@ func TestPostgresqlIgnoresUnwantedColumnsIntegration(t *testing.T) {
 
 	require.NoError(t, p.Start(&acc))
 	require.NoError(t, acc.GatherError(p.Gather))
-	require.NotEmpty(t, p.IgnoredColumns())
+	assert.NotEmpty(t, p.IgnoredColumns())
 	for col := range p.IgnoredColumns() {
-		require.False(t, acc.HasMeasurement(col))
+		assert.False(t, acc.HasMeasurement(col))
 	}
 }
 

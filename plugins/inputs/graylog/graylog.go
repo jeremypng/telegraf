@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/influxdata/telegraf"
-	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/plugins/common/tls"
 	"github.com/influxdata/telegraf/plugins/inputs"
 )
@@ -35,7 +34,6 @@ type GrayLog struct {
 	Metrics  []string
 	Username string
 	Password string
-	Timeout  config.Duration
 	tls.ClientConfig
 
 	client HTTPClient
@@ -79,25 +77,22 @@ func (c *RealHTTPClient) HTTPClient() *http.Client {
 var sampleConfig = `
   ## API endpoint, currently supported API:
   ##
-  ##   - multiple  (e.g. http://<host>:9000/api/system/metrics/multiple)
-  ##   - namespace (e.g. http://<host>:9000/api/system/metrics/namespace/{namespace})
+  ##   - multiple  (Ex http://<host>:12900/system/metrics/multiple)
+  ##   - namespace (Ex http://<host>:12900/system/metrics/namespace/{namespace})
   ##
   ## For namespace endpoint, the metrics array will be ignored for that call.
   ## Endpoint can contain namespace and multiple type calls.
   ##
-  ## Please check http://[graylog-server-ip]:9000/api/api-browser for full list
+  ## Please check http://[graylog-server-ip]:12900/api-browser for full list
   ## of endpoints
   servers = [
-    "http://[graylog-server-ip]:9000/api/system/metrics/multiple",
+    "http://[graylog-server-ip]:12900/system/metrics/multiple",
   ]
-
-  ## Set timeout (default 5 seconds)
-  # timeout = "5s"
 
   ## Metrics list
   ## List of metrics can be found on Graylog webservice documentation.
-  ## Or by hitting the web service api at:
-  ##   http://[graylog-host]:9000/api/system/metrics
+  ## Or by hitting the the web service api at:
+  ##   http://[graylog-host]:12900/system/metrics
   metrics = [
     "jvm.cl.loaded",
     "jvm.memory.pools.Metaspace.committed"
@@ -133,12 +128,12 @@ func (h *GrayLog) Gather(acc telegraf.Accumulator) error {
 			return err
 		}
 		tr := &http.Transport{
-			ResponseHeaderTimeout: time.Duration(h.Timeout),
+			ResponseHeaderTimeout: 3 * time.Second,
 			TLSClientConfig:       tlsCfg,
 		}
 		client := &http.Client{
 			Transport: tr,
-			Timeout:   time.Duration(h.Timeout),
+			Timeout:   4 * time.Second,
 		}
 		h.client.SetHTTPClient(client)
 	}
@@ -290,8 +285,7 @@ func (h *GrayLog) sendRequest(serverURL string) (string, float64, error) {
 func init() {
 	inputs.Add("graylog", func() telegraf.Input {
 		return &GrayLog{
-			client:  &RealHTTPClient{},
-			Timeout: config.Duration(5 * time.Second),
+			client: &RealHTTPClient{},
 		}
 	})
 }

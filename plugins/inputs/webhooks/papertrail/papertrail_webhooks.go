@@ -3,24 +3,22 @@ package papertrail
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-
 	"github.com/influxdata/telegraf"
 )
 
 type PapertrailWebhook struct {
 	Path string
 	acc  telegraf.Accumulator
-	log  telegraf.Logger
 }
 
-func (pt *PapertrailWebhook) Register(router *mux.Router, acc telegraf.Accumulator, log telegraf.Logger) {
+func (pt *PapertrailWebhook) Register(router *mux.Router, acc telegraf.Accumulator) {
 	router.HandleFunc(pt.Path, pt.eventHandler).Methods("POST")
-	pt.log = log
-	pt.log.Infof("Started the papertrail_webhook on %s", pt.Path)
+	log.Printf("I! Started the papertrail_webhook on %s", pt.Path)
 	pt.acc = acc
 }
 
@@ -66,7 +64,7 @@ func (pt *PapertrailWebhook) eventHandler(w http.ResponseWriter, r *http.Request
 			}
 			pt.acc.AddFields("papertrail", fields, tags, e.ReceivedAt)
 		}
-	} else if payload.Counts != nil { //nolint:revive // Not simplifying here to stay in the structure for better understanding the code
+	} else if payload.Counts != nil {
 		// Handle count-based payload
 		for _, c := range payload.Counts {
 			for ts, count := range *c.TimeSeries {

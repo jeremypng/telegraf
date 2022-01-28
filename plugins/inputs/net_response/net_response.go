@@ -17,10 +17,10 @@ type ResultType uint64
 
 const (
 	Success          ResultType = 0
-	Timeout          ResultType = 1
-	ConnectionFailed ResultType = 2
-	ReadFailed       ResultType = 3
-	StringMismatch   ResultType = 4
+	Timeout                     = 1
+	ConnectionFailed            = 2
+	ReadFailed                  = 3
+	StringMismatch              = 4
 )
 
 // NetResponse struct
@@ -120,8 +120,8 @@ func (n *NetResponse) TCPGather() (map[string]string, map[string]interface{}, er
 			setResult(ReadFailed, fields, tags, n.Expect)
 		} else {
 			// Looking for string in answer
-			regEx := regexp.MustCompile(`.*` + n.Expect + `.*`)
-			find := regEx.FindString(data)
+			RegEx := regexp.MustCompile(`.*` + n.Expect + `.*`)
+			find := RegEx.FindString(data)
 			if find != "" {
 				setResult(Success, fields, tags, n.Expect)
 			} else {
@@ -186,8 +186,8 @@ func (n *NetResponse) UDPGather() (map[string]string, map[string]interface{}, er
 	}
 
 	// Looking for string in answer
-	regEx := regexp.MustCompile(`.*` + n.Expect + `.*`)
-	find := regEx.FindString(string(buf))
+	RegEx := regexp.MustCompile(`.*` + n.Expect + `.*`)
+	find := RegEx.FindString(string(buf))
 	if find != "" {
 		setResult(Success, fields, tags, n.Expect)
 	} else {
@@ -232,25 +232,22 @@ func (n *NetResponse) Gather(acc telegraf.Accumulator) error {
 	tags := map[string]string{"server": host, "port": port}
 	var fields map[string]interface{}
 	var returnTags map[string]string
-
 	// Gather data
-	switch n.Protocol {
-	case "tcp":
+	if n.Protocol == "tcp" {
 		returnTags, fields, err = n.TCPGather()
 		if err != nil {
 			return err
 		}
 		tags["protocol"] = "tcp"
-	case "udp":
+	} else if n.Protocol == "udp" {
 		returnTags, fields, err = n.UDPGather()
 		if err != nil {
 			return err
 		}
 		tags["protocol"] = "udp"
-	default:
+	} else {
 		return errors.New("bad protocol")
 	}
-
 	// Merge the tags
 	for k, v := range returnTags {
 		tags[k] = v

@@ -6,25 +6,9 @@ type request struct {
 	address uint16
 	length  uint16
 	fields  []field
-	tags    map[string]string
 }
 
-func newRequest(f field, tags map[string]string) request {
-	r := request{
-		address: f.address,
-		length:  f.length,
-		fields:  []field{f},
-		tags:    map[string]string{},
-	}
-
-	// Copy the tags
-	for k, v := range tags {
-		r.tags[k] = v
-	}
-	return r
-}
-
-func groupFieldsToRequests(fields []field, tags map[string]string, maxBatchSize uint16) []request {
+func newRequestsFromFields(fields []field, slaveID byte, registerType string, maxBatchSize uint16) []request {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -42,25 +26,31 @@ func groupFieldsToRequests(fields []field, tags map[string]string, maxBatchSize 
 	// and the given maximum chunk sizes.
 	var requests []request
 
-	current := newRequest(fields[0], tags)
+	current := request{
+		address: fields[0].address,
+		length:  fields[0].length,
+		fields:  []field{fields[0]},
+	}
+
 	for _, f := range fields[1:] {
 		// Check if we need to interrupt the current chunk and require a new one
 		needInterrupt := f.address != current.address+current.length            // not consecutive
 		needInterrupt = needInterrupt || f.length+current.length > maxBatchSize // too large
 
 		if !needInterrupt {
-			// Still safe to add the field to the current request
+			// Still save to add the field to the current request
 			current.length += f.length
-			if !f.omit {
-				// Omit adding the field but use it for constructing the request.
-				current.fields = append(current.fields, f)
-			}
+			current.fields = append(current.fields, f) // TODO: omit the field with a future flag
 			continue
 		}
 
 		// Finish the current request, add it to the list and construct a new one
 		requests = append(requests, current)
-		current = newRequest(f, tags)
+		current = request{
+			address: f.address,
+			length:  f.length,
+			fields:  []field{f},
+		}
 	}
 	requests = append(requests, current)
 

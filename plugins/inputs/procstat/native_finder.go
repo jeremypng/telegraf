@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/process"
 )
 
 //NativeFinder uses gopsutil to find processes

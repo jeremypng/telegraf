@@ -3,6 +3,7 @@ package hddtemp
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/influxdata/telegraf/plugins/inputs/hddtemp/go-hddtemp"
@@ -43,7 +44,7 @@ func TestFetch(t *testing.T) {
 	err := hddTemp.Gather(acc)
 
 	require.NoError(t, err)
-	require.Equal(t, acc.NFields(), 2)
+	assert.Equal(t, acc.NFields(), 2)
 
 	var tests = []struct {
 		fields map[string]interface{}

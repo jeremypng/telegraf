@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func SMTPCTL(output string) func(string, config.Duration, bool) (*bytes.Buffer, error) {
@@ -23,11 +22,11 @@ func TestFilterSomeStats(t *testing.T) {
 	}
 	err := v.Gather(acc)
 
-	require.NoError(t, err)
-	require.True(t, acc.HasMeasurement("opensmtpd"))
-	require.Equal(t, acc.NMetrics(), uint64(1))
+	assert.NoError(t, err)
+	assert.True(t, acc.HasMeasurement("opensmtpd"))
+	assert.Equal(t, acc.NMetrics(), uint64(1))
 
-	require.Equal(t, acc.NFields(), 36)
+	assert.Equal(t, acc.NFields(), 36)
 	acc.AssertContainsFields(t, "opensmtpd", parsedFullOutput)
 }
 

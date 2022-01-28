@@ -6,13 +6,14 @@ package win_perf_counters
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"strings"
 
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWinPerformanceQueryImplIntegration(t *testing.T) {
@@ -29,15 +30,15 @@ func TestWinPerformanceQueryImplIntegration(t *testing.T) {
 
 	_, err = query.AddCounterToQuery("")
 	require.Error(t, err, "uninitialized query must return errors")
-	require.True(t, strings.Contains(err.Error(), "uninitialized"))
+	assert.True(t, strings.Contains(err.Error(), "uninitialized"))
 
 	_, err = query.AddEnglishCounterToQuery("")
 	require.Error(t, err, "uninitialized query must return errors")
-	require.True(t, strings.Contains(err.Error(), "uninitialized"))
+	assert.True(t, strings.Contains(err.Error(), "uninitialized"))
 
 	err = query.CollectData()
 	require.Error(t, err, "uninitialized query must return errors")
-	require.True(t, strings.Contains(err.Error(), "uninitialized"))
+	assert.True(t, strings.Contains(err.Error(), "uninitialized"))
 
 	err = query.Open()
 	require.NoError(t, err)
@@ -46,7 +47,7 @@ func TestWinPerformanceQueryImplIntegration(t *testing.T) {
 
 	hCounter, err = query.AddCounterToQuery(counterPath)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, hCounter)
+	assert.NotEqual(t, 0, hCounter)
 
 	err = query.Close()
 	require.NoError(t, err)
@@ -56,11 +57,11 @@ func TestWinPerformanceQueryImplIntegration(t *testing.T) {
 
 	hCounter, err = query.AddEnglishCounterToQuery(counterPath)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, hCounter)
+	assert.NotEqual(t, 0, hCounter)
 
 	cp, err := query.GetCounterPath(hCounter)
 	require.NoError(t, err)
-	require.True(t, strings.HasSuffix(cp, counterPath))
+	assert.True(t, strings.HasSuffix(cp, counterPath))
 
 	err = query.CollectData()
 	require.NoError(t, err)
@@ -75,19 +76,19 @@ func TestWinPerformanceQueryImplIntegration(t *testing.T) {
 	now := time.Now()
 	mtime, err := query.CollectDataWithTime()
 	require.NoError(t, err)
-	require.True(t, mtime.Sub(now) < time.Second)
+	assert.True(t, mtime.Sub(now) < time.Second)
 
 	counterPath = "\\Process(*)\\% Processor Time"
 	paths, err := query.ExpandWildCardPath(counterPath)
 	require.NoError(t, err)
 	require.NotNil(t, paths)
-	require.True(t, len(paths) > 1)
+	assert.True(t, len(paths) > 1)
 
 	counterPath = "\\Process(_Total)\\*"
 	paths, err = query.ExpandWildCardPath(counterPath)
 	require.NoError(t, err)
 	require.NotNil(t, paths)
-	require.True(t, len(paths) > 1)
+	assert.True(t, len(paths) > 1)
 
 	err = query.Open()
 	require.NoError(t, err)
@@ -95,7 +96,7 @@ func TestWinPerformanceQueryImplIntegration(t *testing.T) {
 	counterPath = "\\Process(*)\\% Processor Time"
 	hCounter, err = query.AddEnglishCounterToQuery(counterPath)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, hCounter)
+	assert.NotEqual(t, 0, hCounter)
 
 	err = query.CollectData()
 	require.NoError(t, err)
@@ -110,7 +111,7 @@ func TestWinPerformanceQueryImplIntegration(t *testing.T) {
 		arr, err = query.GetFormattedCounterArrayDouble(hCounter)
 	}
 	require.NoError(t, err)
-	require.True(t, len(arr) > 0, "Too")
+	assert.True(t, len(arr) > 0, "Too")
 
 	err = query.Close()
 	require.NoError(t, err)
@@ -452,12 +453,7 @@ func TestWinPerfcountersConfigError1Integration(t *testing.T) {
 
 	perfobjects[0] = PerfObject
 
-	m := Win_PerfCounters{
-		PrintValid: false,
-		Object:     perfobjects,
-		query:      &PerformanceQueryImpl{},
-		Log:        testutil.Logger{},
-	}
+	m := Win_PerfCounters{PrintValid: false, Object: perfobjects, query: &PerformanceQueryImpl{}}
 	m.query.Open()
 
 	err := m.ParseConfig()
@@ -491,12 +487,7 @@ func TestWinPerfcountersConfigError2Integration(t *testing.T) {
 
 	perfobjects[0] = PerfObject
 
-	m := Win_PerfCounters{
-		PrintValid: false,
-		Object:     perfobjects,
-		query:      &PerformanceQueryImpl{},
-		Log:        testutil.Logger{},
-	}
+	m := Win_PerfCounters{PrintValid: false, Object: perfobjects, query: &PerformanceQueryImpl{}}
 	m.query.Open()
 
 	err := m.ParseConfig()
@@ -532,12 +523,7 @@ func TestWinPerfcountersConfigError3Integration(t *testing.T) {
 
 	perfobjects[0] = PerfObject
 
-	m := Win_PerfCounters{
-		PrintValid: false,
-		Object:     perfobjects,
-		query:      &PerformanceQueryImpl{},
-		Log:        testutil.Logger{},
-	}
+	m := Win_PerfCounters{PrintValid: false, Object: perfobjects, query: &PerformanceQueryImpl{}}
 	m.query.Open()
 
 	err := m.ParseConfig()
@@ -572,12 +558,7 @@ func TestWinPerfcountersCollect1Integration(t *testing.T) {
 
 	perfobjects[0] = PerfObject
 
-	m := Win_PerfCounters{
-		PrintValid: false,
-		Object:     perfobjects,
-		query:      &PerformanceQueryImpl{},
-		Log:        testutil.Logger{},
-	}
+	m := Win_PerfCounters{PrintValid: false, Object: perfobjects, query: &PerformanceQueryImpl{}}
 	var acc testutil.Accumulator
 	err := m.Gather(&acc)
 	require.NoError(t, err)
@@ -585,11 +566,11 @@ func TestWinPerfcountersCollect1Integration(t *testing.T) {
 	time.Sleep(2000 * time.Millisecond)
 	err = m.Gather(&acc)
 	require.NoError(t, err)
-	require.Len(t, acc.Metrics, 2)
+	assert.Len(t, acc.Metrics, 2)
 
 	for _, metric := range acc.Metrics {
 		_, ok := metric.Fields[expectedCounter]
-		require.True(t, ok)
+		assert.True(t, ok)
 	}
 
 }
@@ -623,14 +604,7 @@ func TestWinPerfcountersCollect2Integration(t *testing.T) {
 
 	perfobjects[0] = PerfObject
 
-	m := Win_PerfCounters{
-		PrintValid:            false,
-		UsePerfCounterTime:    true,
-		Object:                perfobjects,
-		query:                 &PerformanceQueryImpl{},
-		UseWildcardsExpansion: true,
-		Log:                   testutil.Logger{},
-	}
+	m := Win_PerfCounters{PrintValid: false, UsePerfCounterTime: true, Object: perfobjects, query: &PerformanceQueryImpl{}, UseWildcardsExpansion: true}
 	var acc testutil.Accumulator
 	err := m.Gather(&acc)
 	require.NoError(t, err)
@@ -639,11 +613,11 @@ func TestWinPerfcountersCollect2Integration(t *testing.T) {
 	err = m.Gather(&acc)
 	require.NoError(t, err)
 
-	require.Len(t, acc.Metrics, 4)
+	assert.Len(t, acc.Metrics, 4)
 
 	for _, metric := range acc.Metrics {
 		_, ok := metric.Fields[expectedCounter]
-		require.True(t, ok)
+		assert.True(t, ok)
 	}
 
 }

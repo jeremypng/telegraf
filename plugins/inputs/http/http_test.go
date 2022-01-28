@@ -31,7 +31,6 @@ func TestHTTPWithJSONFormat(t *testing.T) {
 	address := fakeServer.URL + "/endpoint"
 	plugin := &httpplugin.HTTP{
 		URLs: []string{address},
-		Log:  testutil.Logger{},
 	}
 	metricName := "metricName"
 
@@ -75,7 +74,6 @@ func TestHTTPHeaders(t *testing.T) {
 	plugin := &httpplugin.HTTP{
 		URLs:    []string{address},
 		Headers: map[string]string{header: headerValue},
-		Log:     testutil.Logger{},
 	}
 
 	p, _ := parsers.NewParser(&parsers.Config{
@@ -98,7 +96,6 @@ func TestInvalidStatusCode(t *testing.T) {
 	address := fakeServer.URL + "/endpoint"
 	plugin := &httpplugin.HTTP{
 		URLs: []string{address},
-		Log:  testutil.Logger{},
 	}
 
 	metricName := "metricName"
@@ -123,7 +120,6 @@ func TestSuccessStatusCodes(t *testing.T) {
 	plugin := &httpplugin.HTTP{
 		URLs:               []string{address},
 		SuccessStatusCodes: []int{200, 202},
-		Log:                testutil.Logger{},
 	}
 
 	metricName := "metricName"
@@ -151,7 +147,6 @@ func TestMethod(t *testing.T) {
 	plugin := &httpplugin.HTTP{
 		URLs:   []string{fakeServer.URL},
 		Method: "POST",
-		Log:    testutil.Logger{},
 	}
 
 	p, _ := parsers.NewParser(&parsers.Config{
@@ -187,7 +182,6 @@ func TestBodyAndContentEncoding(t *testing.T) {
 			plugin: &httpplugin.HTTP{
 				Method: "POST",
 				URLs:   []string{address},
-				Log:    testutil.Logger{},
 			},
 			queryHandlerFunc: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
@@ -202,7 +196,6 @@ func TestBodyAndContentEncoding(t *testing.T) {
 				URLs:   []string{address},
 				Method: "POST",
 				Body:   "test",
-				Log:    testutil.Logger{},
 			},
 			queryHandlerFunc: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
@@ -217,7 +210,6 @@ func TestBodyAndContentEncoding(t *testing.T) {
 				URLs:   []string{address},
 				Method: "GET",
 				Body:   "test",
-				Log:    testutil.Logger{},
 			},
 			queryHandlerFunc: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
@@ -233,7 +225,6 @@ func TestBodyAndContentEncoding(t *testing.T) {
 				Method:          "GET",
 				Body:            "test",
 				ContentEncoding: "gzip",
-				Log:             testutil.Logger{},
 			},
 			queryHandlerFunc: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, r.Header.Get("Content-Encoding"), "gzip")
@@ -287,7 +278,6 @@ func TestOAuthClientCredentialsGrant(t *testing.T) {
 			name: "no credentials",
 			plugin: &httpplugin.HTTP{
 				URLs: []string{u.String()},
-				Log:  testutil.Logger{},
 			},
 			handler: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				require.Len(t, r.Header["Authorization"], 0)
@@ -306,7 +296,6 @@ func TestOAuthClientCredentialsGrant(t *testing.T) {
 						Scopes:       []string{"urn:opc:idm:__myscopes__"},
 					},
 				},
-				Log: testutil.Logger{},
 			},
 			tokenHandler: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)

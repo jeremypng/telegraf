@@ -2,7 +2,7 @@
 
 The `json` output data format converts metrics into JSON documents.
 
-## Configuration
+### Configuration
 
 ```toml
 [[outputs.file]]
@@ -28,10 +28,9 @@ The `json` output data format converts metrics into JSON documents.
   #json_timestamp_format = ""
 ```
 
-## Examples
+### Examples:
 
 Standard form:
-
 ```json
 {
     "fields": {
@@ -51,7 +50,6 @@ Standard form:
 When an output plugin needs to emit multiple metrics at one time, it may use
 the batch format.  The use of batch format is determined by the plugin,
 reference the documentation for the specific plugin.
-
 ```json
 {
     "metrics": [

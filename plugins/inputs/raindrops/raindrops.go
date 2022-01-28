@@ -116,6 +116,7 @@ func (r *Raindrops) gatherURL(addr *url.URL, acc telegraf.Accumulator) error {
 		}
 		activeLineStr, activeErr = buf.ReadString('\n')
 		if activeErr != nil {
+			iterate = false
 			break
 		}
 		if strings.Compare(activeLineStr, "\n") == 0 {
@@ -153,7 +154,7 @@ func (r *Raindrops) gatherURL(addr *url.URL, acc telegraf.Accumulator) error {
 		}
 		acc.AddFields("raindrops_listen", lis, tags)
 	}
-	return nil //nolint:nilerr // nil returned on purpose
+	return nil
 }
 
 // Get tag(s) for the raindrops calling/writing plugin

@@ -10,10 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/internal"
@@ -21,6 +17,8 @@ import (
 	"github.com/influxdata/telegraf/plugins/outputs"
 	"github.com/influxdata/telegraf/plugins/outputs/prometheus_client/v1"
 	"github.com/influxdata/telegraf/plugins/outputs/prometheus_client/v2"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -123,15 +121,9 @@ func (p *PrometheusClient) Init() error {
 	for collector := range defaultCollectors {
 		switch collector {
 		case "gocollector":
-			err := registry.Register(collectors.NewGoCollector())
-			if err != nil {
-				return err
-			}
+			registry.Register(prometheus.NewGoCollector())
 		case "process":
-			err := registry.Register(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-			if err != nil {
-				return err
-			}
+			registry.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		default:
 			return fmt.Errorf("unrecognized collector %s", collector)
 		}
@@ -168,10 +160,7 @@ func (p *PrometheusClient) Init() error {
 	rangeHandler := internal.IPRangeHandler(ipRange, onError)
 	promHandler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
 	landingPageHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("Telegraf Output Plugin: Prometheus Client "))
-		if err != nil {
-			p.Log.Errorf("Error occurred when writing HTTP reply: %v", err)
-		}
+		w.Write([]byte("Telegraf Output Plugin: Prometheus Client "))
 	})
 
 	mux := http.NewServeMux()
@@ -240,7 +229,7 @@ func onError(rw http.ResponseWriter, code int) {
 	http.Error(rw, http.StatusText(code), code)
 }
 
-// URL returns the address the plugin is listening on.  If not listening
+// Address returns the address the plugin is listening on.  If not listening
 // an empty string is returned.
 func (p *PrometheusClient) URL() string {
 	if p.url != nil {

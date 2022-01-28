@@ -11,7 +11,6 @@ import (
 	"github.com/influxdata/tail"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal/globpath"
-	"github.com/influxdata/telegraf/models"
 	"github.com/influxdata/telegraf/plugins/inputs"
 	"github.com/influxdata/telegraf/plugins/parsers"
 )
@@ -185,7 +184,6 @@ func (l *LogParserPlugin) Start(acc telegraf.Accumulator) error {
 	if err != nil {
 		return err
 	}
-	models.SetLoggerOnPlugin(l.GrokParser, l.Log)
 
 	l.wg.Add(1)
 	go l.parser()

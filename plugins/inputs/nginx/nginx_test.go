@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const nginxSampleResponse = `
@@ -33,7 +33,7 @@ func TestNginxTags(t *testing.T) {
 	for _, url1 := range urls {
 		addr, _ = url.Parse(url1)
 		tagMap := getTags(addr)
-		require.Contains(t, tagMap["server"], "localhost")
+		assert.Contains(t, tagMap["server"], "localhost")
 	}
 }
 

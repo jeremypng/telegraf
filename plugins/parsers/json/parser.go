@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
-
-	"github.com/tidwall/gjson"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/filter"
 	"github.com/influxdata/telegraf/internal"
 	"github.com/influxdata/telegraf/metric"
+	"github.com/tidwall/gjson"
 )
 
 var (
@@ -45,8 +45,6 @@ type Parser struct {
 	timezone     string
 	defaultTags  map[string]string
 	strict       bool
-
-	Log telegraf.Logger `toml:"-"`
 }
 
 func New(config *Config) (*Parser, error) {
@@ -112,7 +110,8 @@ func (p *Parser) parseObject(data map[string]interface{}, timestamp time.Time) (
 
 	// checks if json_name_key is set
 	if p.nameKey != "" {
-		if field, ok := f.Fields[p.nameKey].(string); ok {
+		switch field := f.Fields[p.nameKey].(type) {
+		case string:
 			name = field
 		}
 	}
@@ -173,7 +172,7 @@ func (p *Parser) switchFieldToTag(tags map[string]string, fields map[string]inte
 			tags[name] = strconv.FormatFloat(t, 'f', -1, 64)
 			delete(fields, name)
 		default:
-			p.Log.Errorf("Unrecognized type %T", value)
+			log.Printf("E! [parsers.json] Unrecognized type %T", value)
 		}
 	}
 
@@ -195,7 +194,7 @@ func (p *Parser) Parse(buf []byte) ([]telegraf.Metric, error) {
 		result := gjson.GetBytes(buf, p.query)
 		buf = []byte(result.Raw)
 		if !result.IsArray() && !result.IsObject() && result.Type != gjson.Null {
-			err := fmt.Errorf("query path must lead to a JSON object, array of objects or null, but lead to: %v", result.Type)
+			err := fmt.Errorf("E! Query path must lead to a JSON object, array of objects or null, but lead to: %v", result.Type)
 			return nil, err
 		}
 		if result.Type == gjson.Null {
@@ -293,21 +292,23 @@ func (f *JSONFlattener) FullFlattenJSON(
 			}
 			err := f.FullFlattenJSON(fieldkey, v, convertString, convertBool)
 			if err != nil {
-				return err
+				return nil
 			}
 		}
 	case float64:
 		f.Fields[fieldname] = t
 	case string:
-		if !convertString {
+		if convertString {
+			f.Fields[fieldname] = v.(string)
+		} else {
 			return nil
 		}
-		f.Fields[fieldname] = v.(string)
 	case bool:
-		if !convertBool {
+		if convertBool {
+			f.Fields[fieldname] = v.(bool)
+		} else {
 			return nil
 		}
-		f.Fields[fieldname] = v.(bool)
 	case nil:
 		return nil
 	default:

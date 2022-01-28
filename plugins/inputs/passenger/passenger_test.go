@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/influxdata/telegraf/testutil"
@@ -48,7 +49,7 @@ func Test_Invalid_Passenger_Status_Cli(t *testing.T) {
 
 	err := r.Gather(&acc)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), `exec: "an-invalid-command": executable file not found in `)
+	assert.Contains(t, err.Error(), `exec: "an-invalid-command": executable file not found in `)
 }
 
 func Test_Invalid_Xml(t *testing.T) {
@@ -64,7 +65,7 @@ func Test_Invalid_Xml(t *testing.T) {
 
 	err = r.Gather(&acc)
 	require.Error(t, err)
-	require.Equal(t, "cannot parse input with error: EOF", err.Error())
+	assert.Equal(t, "cannot parse input with error: EOF", err.Error())
 }
 
 // We test this by ensure that the error message match the path of default cli
@@ -79,7 +80,7 @@ func Test_Default_Config_Load_Default_Command(t *testing.T) {
 
 	err = r.Gather(&acc)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "exec: \"passenger-status\": executable file not found in ")
+	assert.Contains(t, err.Error(), "exec: \"passenger-status\": executable file not found in ")
 }
 
 func TestPassengerGenerateMetric(t *testing.T) {

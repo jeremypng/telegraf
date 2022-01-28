@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/process"
 )
 
 type Process interface {
@@ -43,13 +43,13 @@ type Proc struct {
 }
 
 func NewProc(pid PID) (Process, error) {
-	p, err := process.NewProcess(int32(pid))
+	process, err := process.NewProcess(int32(pid))
 	if err != nil {
 		return nil, err
 	}
 
 	proc := &Proc{
-		Process:     p,
+		Process:     process,
 		hasCPUTimes: false,
 		tags:        make(map[string]string),
 	}

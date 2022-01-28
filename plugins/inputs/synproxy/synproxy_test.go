@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/testutil"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSynproxyFileNormal(t *testing.T) {
@@ -38,8 +38,8 @@ func TestSynproxyFileHeaderMismatch(t *testing.T) {
 
 	acc := testutil.Accumulator{}
 	err := k.Gather(&acc)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid number of columns in data")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid number of columns in data")
 }
 
 func TestSynproxyFileInvalidHex(t *testing.T) {
@@ -52,8 +52,8 @@ func TestSynproxyFileInvalidHex(t *testing.T) {
 
 	acc := testutil.Accumulator{}
 	err := k.Gather(&acc)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "invalid value")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid value")
 }
 
 func TestNoSynproxyFile(t *testing.T) {
@@ -69,7 +69,7 @@ func TestNoSynproxyFile(t *testing.T) {
 
 	acc := testutil.Accumulator{}
 	err := k.Gather(&acc)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 // Valid Synproxy file
@@ -149,7 +149,7 @@ func testSynproxyFileData(t *testing.T, fileData string, telegrafData map[string
 
 	acc := testutil.Accumulator{}
 	err := k.Gather(&acc)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	acc.AssertContainsFields(t, "synproxy", telegrafData)
 }

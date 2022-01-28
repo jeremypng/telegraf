@@ -41,7 +41,7 @@ type VMCurrentStats struct {
 }
 
 type VMStat struct {
-	ID        json.Number `json:"vmid"`
+	ID        string      `json:"vmid"`
 	Name      string      `json:"name"`
 	Status    string      `json:"status"`
 	UsedMem   json.Number `json:"mem"`
@@ -66,11 +66,4 @@ type NodeDNS struct {
 	Data struct {
 		Searchdomain string `json:"search"`
 	} `json:"data"`
-}
-
-type metrics struct {
-	total          int64
-	used           int64
-	free           int64
-	usedPercentage float64
 }

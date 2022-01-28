@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"math/big"
 	"net"
 	"net/url"
@@ -145,7 +146,7 @@ func pemBlockForKey(priv interface{}) (*pem.Block, error) {
 }
 
 //revive:disable-next-line
-func (o *OpcUA) generateClientOpts(endpoints []*ua.EndpointDescription) ([]opcua.Option, error) {
+func generateClientOpts(endpoints []*ua.EndpointDescription, certFile, keyFile, policy, mode, auth, username, password string, requestTimeout time.Duration) ([]opcua.Option, error) {
 	opts := []opcua.Option{}
 	appuri := "urn:telegraf:gopcua:client"
 	appname := "Telegraf"
@@ -153,16 +154,13 @@ func (o *OpcUA) generateClientOpts(endpoints []*ua.EndpointDescription) ([]opcua
 	// ApplicationURI is automatically read from the cert so is not required if a cert if provided
 	opts = append(opts, opcua.ApplicationURI(appuri))
 	opts = append(opts, opcua.ApplicationName(appname))
-	opts = append(opts, opcua.RequestTimeout(time.Duration(o.RequestTimeout)))
 
-	certFile := o.Certificate
-	keyFile := o.PrivateKey
-	policy := o.SecurityPolicy
-	mode := o.SecurityMode
+	opts = append(opts, opcua.RequestTimeout(requestTimeout))
+
 	var err error
 	if certFile == "" && keyFile == "" {
 		if policy != "None" || mode != "None" {
-			certFile, keyFile, err = generateCert(appuri, 2048, certFile, keyFile, 365*24*time.Hour)
+			certFile, keyFile, err = generateCert(appuri, 2048, certFile, keyFile, (365 * 24 * time.Hour))
 			if err != nil {
 				return nil, err
 			}
@@ -174,7 +172,7 @@ func (o *OpcUA) generateClientOpts(endpoints []*ua.EndpointDescription) ([]opcua
 		debug.Printf("Loading cert/key from %s/%s", certFile, keyFile)
 		c, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
-			o.Log.Warnf("Failed to load certificate: %s", err)
+			log.Printf("Failed to load certificate: %s", err)
 		} else {
 			pk, ok := c.PrivateKey.(*rsa.PrivateKey)
 			if !ok {
@@ -200,7 +198,7 @@ func (o *OpcUA) generateClientOpts(endpoints []*ua.EndpointDescription) ([]opcua
 	}
 
 	// Select the most appropriate authentication mode from server capabilities and user input
-	authMode, authOption, err := o.generateAuth(o.AuthMethod, cert, o.Username, o.Password)
+	authMode, authOption, err := generateAuth(auth, cert, username, password)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +276,7 @@ func (o *OpcUA) generateClientOpts(endpoints []*ua.EndpointDescription) ([]opcua
 	return opts, nil
 }
 
-func (o *OpcUA) generateAuth(a string, cert []byte, un, pw string) (ua.UserTokenType, opcua.Option, error) {
+func generateAuth(a string, cert []byte, un, pw string) (ua.UserTokenType, opcua.Option, error) {
 	var err error
 
 	var authMode ua.UserTokenType
@@ -315,7 +313,7 @@ func (o *OpcUA) generateAuth(a string, cert []byte, un, pw string) (ua.UserToken
 		authOption = opcua.AuthIssuedToken([]byte(nil))
 
 	default:
-		o.Log.Warnf("unknown auth-mode, defaulting to Anonymous")
+		log.Printf("unknown auth-mode, defaulting to Anonymous")
 		authMode = ua.UserTokenTypeAnonymous
 		authOption = opcua.AuthAnonymous()
 	}

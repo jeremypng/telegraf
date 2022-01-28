@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -15,8 +16,6 @@ import (
 
 type Powerdns struct {
 	UnixSockets []string
-
-	Log telegraf.Logger `toml:"-"`
 }
 
 var sampleConfig = `
@@ -90,7 +89,7 @@ func (p *Powerdns) gatherServer(address string, acc telegraf.Accumulator) error 
 	metrics := string(buf)
 
 	// Process data
-	fields := p.parseResponse(metrics)
+	fields := parseResponse(metrics)
 
 	// Add server socket as a tag
 	tags := map[string]string{"server": address}
@@ -100,7 +99,7 @@ func (p *Powerdns) gatherServer(address string, acc telegraf.Accumulator) error 
 	return nil
 }
 
-func (p *Powerdns) parseResponse(metrics string) map[string]interface{} {
+func parseResponse(metrics string) map[string]interface{} {
 	values := make(map[string]interface{})
 
 	s := strings.Split(metrics, ",")
@@ -113,7 +112,8 @@ func (p *Powerdns) parseResponse(metrics string) map[string]interface{} {
 
 		i, err := strconv.ParseInt(m[1], 10, 64)
 		if err != nil {
-			p.Log.Errorf("error parsing integer for metric %q: %s", metric, err.Error())
+			log.Printf("E! [inputs.powerdns] error parsing integer for metric %q: %s",
+				metric, err.Error())
 			continue
 		}
 		values[m[0]] = i

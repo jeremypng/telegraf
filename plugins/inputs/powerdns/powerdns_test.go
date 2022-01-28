@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/influxdata/telegraf/testutil"
@@ -107,16 +108,12 @@ func TestPowerdnsGeneratesMetrics(t *testing.T) {
 		"meta-cache-size", "qsize-q", "signature-cache-size", "sys-msec", "uptime", "user-msec"}
 
 	for _, metric := range intMetrics {
-		require.True(t, acc.HasInt64Field("powerdns", metric), metric)
+		assert.True(t, acc.HasInt64Field("powerdns", metric), metric)
 	}
 }
 
 func TestPowerdnsParseMetrics(t *testing.T) {
-	p := &Powerdns{
-		Log: testutil.Logger{},
-	}
-
-	values := p.parseResponse(metrics)
+	values := parseResponse(metrics)
 
 	tests := []struct {
 		key   string
@@ -176,11 +173,7 @@ func TestPowerdnsParseMetrics(t *testing.T) {
 }
 
 func TestPowerdnsParseCorruptMetrics(t *testing.T) {
-	p := &Powerdns{
-		Log: testutil.Logger{},
-	}
-
-	values := p.parseResponse(corruptMetrics)
+	values := parseResponse(corruptMetrics)
 
 	tests := []struct {
 		key   string
@@ -239,11 +232,7 @@ func TestPowerdnsParseCorruptMetrics(t *testing.T) {
 }
 
 func TestPowerdnsParseIntOverflowMetrics(t *testing.T) {
-	p := &Powerdns{
-		Log: testutil.Logger{},
-	}
-
-	values := p.parseResponse(intOverflowMetrics)
+	values := parseResponse(intOverflowMetrics)
 
 	tests := []struct {
 		key   string

@@ -6,9 +6,9 @@ package rethinkdb
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateVersion(t *testing.T) {
@@ -39,7 +39,7 @@ func TestAddClusterStats(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, metric := range ClusterTracking {
-		require.True(t, acc.HasIntValue(metric))
+		assert.True(t, acc.HasIntValue(metric))
 	}
 }
 
@@ -50,7 +50,7 @@ func TestAddMemberStats(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, metric := range MemberTracking {
-		require.True(t, acc.HasIntValue(metric))
+		assert.True(t, acc.HasIntValue(metric))
 	}
 }
 
@@ -61,7 +61,7 @@ func TestAddTableStats(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, metric := range TableTracking {
-		require.True(t, acc.HasIntValue(metric))
+		assert.True(t, acc.HasIntValue(metric))
 	}
 
 	keys := []string{
@@ -77,6 +77,6 @@ func TestAddTableStats(t *testing.T) {
 	}
 
 	for _, metric := range keys {
-		require.True(t, acc.HasIntValue(metric))
+		assert.True(t, acc.HasIntValue(metric))
 	}
 }

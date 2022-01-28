@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 const (
@@ -100,7 +100,7 @@ type ClusterClient struct {
 
 type claims struct {
 	UID string `json:"uid"`
-	jwt.RegisteredClaims
+	jwt.StandardClaims
 }
 
 func (e APIError) Error() string {
@@ -327,9 +327,9 @@ func (c *ClusterClient) toURL(path string) string {
 func (c *ClusterClient) createLoginToken(sa *ServiceAccount) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims{
 		UID: sa.AccountID,
-		RegisteredClaims: jwt.RegisteredClaims{
+		StandardClaims: jwt.StandardClaims{
 			// How long we have to login with this token
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 5)),
+			ExpiresAt: time.Now().Add(time.Minute * 5).Unix(),
 		},
 	})
 	return token.SignedString(sa.PrivateKey)

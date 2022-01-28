@@ -15,9 +15,8 @@ import (
 
 type Postgresql struct {
 	Service
-	Databases          []string `toml:"databases"`
-	IgnoredDatabases   []string `toml:"ignored_databases"`
-	PreparedStatements bool     `toml:"prepared_statements"`
+	Databases        []string
+	IgnoredDatabases []string
 }
 
 var ignoredColumns = map[string]bool{"stats_reset": true}
@@ -54,11 +53,6 @@ var sampleConfig = `
   ## A list of databases to pull metrics about. If not specified, metrics for all
   ## databases are gathered.  Do NOT use with the 'ignored_databases' option.
   # databases = ["app_production", "testing"]
-
-  ## Whether to use prepared statements when connecting to the database.
-  ## This should be set to false when connecting through a PgBouncer instance
-  ## with pool_mode set to transaction.
-  # prepared_statements = true
 `
 
 func (p *Postgresql) SampleConfig() string {
@@ -71,11 +65,6 @@ func (p *Postgresql) Description() string {
 
 func (p *Postgresql) IgnoredColumns() map[string]bool {
 	return ignoredColumns
-}
-
-func (p *Postgresql) Init() error {
-	p.Service.IsPgBouncer = !p.PreparedStatements
-	return nil
 }
 
 func (p *Postgresql) Gather(acc telegraf.Accumulator) error {
@@ -209,8 +198,8 @@ func init() {
 				MaxIdle:     1,
 				MaxOpen:     1,
 				MaxLifetime: config.Duration(0),
+				IsPgBouncer: false,
 			},
-			PreparedStatements: true,
 		}
 	})
 }

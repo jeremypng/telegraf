@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/testutil"
 )
@@ -42,8 +40,7 @@ func TestTwoFullEventsWithParameter(t *testing.T) {
 		cache:    make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(start)
 	derivative.Add(finish)
@@ -69,8 +66,7 @@ func TestTwoFullEventsWithParameterReverseSequence(t *testing.T) {
 		cache:    make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(finish)
 	derivative.Add(start)
@@ -92,8 +88,7 @@ func TestTwoFullEventsWithoutParameter(t *testing.T) {
 	acc := testutil.Accumulator{}
 	derivative := NewDerivative()
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	startTime := time.Now()
 	duration, _ := time.ParseDuration("2s")
@@ -135,8 +130,7 @@ func TestTwoFullEventsInSeperatePushes(t *testing.T) {
 		cache:       make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(start)
 	derivative.Push(&acc)
@@ -169,8 +163,7 @@ func TestTwoFullEventsInSeperatePushesWithSeveralRollOvers(t *testing.T) {
 		cache:       make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(start)
 	derivative.Push(&acc)
@@ -202,8 +195,7 @@ func TestTwoFullEventsInSeperatePushesWithOutRollOver(t *testing.T) {
 		cache:       make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(start)
 	// This test relies on RunningAggregator always callining Reset after Push
@@ -228,8 +220,7 @@ func TestIgnoresMissingVariable(t *testing.T) {
 		cache:    make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	noParameter := metric.New("TestMetric",
 		map[string]string{"state": "no_parameter"},
@@ -269,8 +260,7 @@ func TestMergesDifferenMetricsWithSameHash(t *testing.T) {
 	acc := testutil.Accumulator{}
 	derivative := NewDerivative()
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	startTime := time.Now()
 	duration, _ := time.ParseDuration("2s")
@@ -319,8 +309,7 @@ func TestDropsAggregatesOnMaxRollOver(t *testing.T) {
 		cache:       make(map[uint64]*aggregate),
 	}
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(start)
 	derivative.Push(&acc)
@@ -343,8 +332,7 @@ func TestAddMetricsResetsRollOver(t *testing.T) {
 		cache:       make(map[uint64]*aggregate),
 		Log:         testutil.Logger{},
 	}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	derivative.Add(start)
 	derivative.Push(&acc)
@@ -368,8 +356,7 @@ func TestCalculatesCorrectDerivativeOnTwoConsecutivePeriods(t *testing.T) {
 	period, _ := time.ParseDuration("10s")
 	derivative := NewDerivative()
 	derivative.Log = testutil.Logger{}
-	err := derivative.Init()
-	require.NoError(t, err)
+	derivative.Init()
 
 	startTime := time.Now()
 	first := metric.New("One Field",

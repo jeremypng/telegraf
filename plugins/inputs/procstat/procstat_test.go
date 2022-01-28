@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/process"
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/process"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -51,13 +51,11 @@ MainPID=11408
 ControlPID=0
 ExecMainPID=11408
 `)
-		//nolint:revive // error code is important for this "test"
 		os.Exit(0)
 	}
 
 	//nolint:errcheck,revive
 	fmt.Printf("command not found\n")
-	//nolint:revive // error code is important for this "test"
 	os.Exit(1)
 }
 
@@ -210,7 +208,7 @@ func TestGather_ProcessName(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.Equal(t, "custom_name", acc.TagValue("procstat", "process_name"))
+	assert.Equal(t, "custom_name", acc.TagValue("procstat", "process_name"))
 }
 
 func TestGather_NoProcessNameUsesReal(t *testing.T) {
@@ -224,7 +222,7 @@ func TestGather_NoProcessNameUsesReal(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.True(t, acc.HasTag("procstat", "process_name"))
+	assert.True(t, acc.HasTag("procstat", "process_name"))
 }
 
 func TestGather_NoPidTag(t *testing.T) {
@@ -236,8 +234,8 @@ func TestGather_NoPidTag(t *testing.T) {
 		createProcess:   newTestProc,
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
-	require.True(t, acc.HasInt32Field("procstat", "pid"))
-	require.False(t, acc.HasTag("procstat", "pid"))
+	assert.True(t, acc.HasInt32Field("procstat", "pid"))
+	assert.False(t, acc.HasTag("procstat", "pid"))
 }
 
 func TestGather_PidTag(t *testing.T) {
@@ -250,8 +248,8 @@ func TestGather_PidTag(t *testing.T) {
 		createProcess:   newTestProc,
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
-	require.Equal(t, "42", acc.TagValue("procstat", "pid"))
-	require.False(t, acc.HasInt32Field("procstat", "pid"))
+	assert.Equal(t, "42", acc.TagValue("procstat", "pid"))
+	assert.False(t, acc.HasInt32Field("procstat", "pid"))
 }
 
 func TestGather_Prefix(t *testing.T) {
@@ -264,7 +262,7 @@ func TestGather_Prefix(t *testing.T) {
 		createProcess:   newTestProc,
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
-	require.True(t, acc.HasInt32Field("procstat", "custom_prefix_num_fds"))
+	assert.True(t, acc.HasInt32Field("procstat", "custom_prefix_num_fds"))
 }
 
 func TestGather_Exe(t *testing.T) {
@@ -277,7 +275,7 @@ func TestGather_Exe(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.Equal(t, exe, acc.TagValue("procstat", "exe"))
+	assert.Equal(t, exe, acc.TagValue("procstat", "exe"))
 }
 
 func TestGather_User(t *testing.T) {
@@ -291,7 +289,7 @@ func TestGather_User(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.Equal(t, user, acc.TagValue("procstat", "user"))
+	assert.Equal(t, user, acc.TagValue("procstat", "user"))
 }
 
 func TestGather_Pattern(t *testing.T) {
@@ -305,7 +303,7 @@ func TestGather_Pattern(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.Equal(t, pattern, acc.TagValue("procstat", "pattern"))
+	assert.Equal(t, pattern, acc.TagValue("procstat", "pattern"))
 }
 
 func TestGather_MissingPidMethod(t *testing.T) {
@@ -329,7 +327,7 @@ func TestGather_PidFile(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.Equal(t, pidfile, acc.TagValue("procstat", "pidfile"))
+	assert.Equal(t, pidfile, acc.TagValue("procstat", "pidfile"))
 }
 
 func TestGather_PercentFirstPass(t *testing.T) {
@@ -344,8 +342,8 @@ func TestGather_PercentFirstPass(t *testing.T) {
 	}
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.True(t, acc.HasFloatField("procstat", "cpu_time_user"))
-	require.False(t, acc.HasFloatField("procstat", "cpu_usage"))
+	assert.True(t, acc.HasFloatField("procstat", "cpu_time_user"))
+	assert.False(t, acc.HasFloatField("procstat", "cpu_usage"))
 }
 
 func TestGather_PercentSecondPass(t *testing.T) {
@@ -361,8 +359,8 @@ func TestGather_PercentSecondPass(t *testing.T) {
 	require.NoError(t, acc.GatherError(p.Gather))
 	require.NoError(t, acc.GatherError(p.Gather))
 
-	require.True(t, acc.HasFloatField("procstat", "cpu_time_user"))
-	require.True(t, acc.HasFloatField("procstat", "cpu_usage"))
+	assert.True(t, acc.HasFloatField("procstat", "cpu_time_user"))
+	assert.True(t, acc.HasFloatField("procstat", "cpu_usage"))
 }
 
 func TestGather_systemdUnitPIDs(t *testing.T) {
@@ -376,8 +374,8 @@ func TestGather_systemdUnitPIDs(t *testing.T) {
 		tags := pidsTag.Tags
 		err := pidsTag.Err
 		require.NoError(t, err)
-		require.Equal(t, []PID{11408}, pids)
-		require.Equal(t, "TestGather_systemdUnitPIDs", tags["systemd_unit"])
+		assert.Equal(t, []PID{11408}, pids)
+		assert.Equal(t, "TestGather_systemdUnitPIDs", tags["systemd_unit"])
 	}
 }
 
@@ -402,8 +400,8 @@ func TestGather_cgroupPIDs(t *testing.T) {
 		tags := pidsTag.Tags
 		err := pidsTag.Err
 		require.NoError(t, err)
-		require.Equal(t, []PID{1234, 5678}, pids)
-		require.Equal(t, td, tags["cgroup"])
+		assert.Equal(t, []PID{1234, 5678}, pids)
+		assert.Equal(t, td, tags["cgroup"])
 	}
 }
 

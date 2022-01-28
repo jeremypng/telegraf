@@ -62,7 +62,7 @@ package udp_listener
 // // 	}
 // // 	listener.Stop()
 
-// // 	require.Equal(t, uint64(100000), acc.NMetrics())
+// // 	assert.Equal(t, uint64(100000), acc.NMetrics())
 // // }
 
 // func TestConnectUDP(t *testing.T) {

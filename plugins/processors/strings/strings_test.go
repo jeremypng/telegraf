@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func newM1() telegraf.Metric {
@@ -318,7 +318,6 @@ func TestFieldKeyConversions(t *testing.T) {
 			check: func(t *testing.T, actual telegraf.Metric) {
 				fv, ok := actual.GetField("Request")
 				require.False(t, ok)
-				require.Nil(t, fv)
 
 				fv, ok = actual.GetField("REQUEST")
 				require.True(t, ok)
@@ -687,7 +686,7 @@ func TestTagKeyConversions(t *testing.T) {
 				require.True(t, ok)
 				require.Equal(t, "GET", tv)
 
-				_, ok = actual.GetTag("S-ComputerName")
+				tv, ok = actual.GetTag("S-ComputerName")
 				require.False(t, ok)
 
 				tv, ok = actual.GetTag("s-computername")
@@ -709,7 +708,7 @@ func TestTagKeyConversions(t *testing.T) {
 				require.True(t, ok)
 				require.Equal(t, "GET", tv)
 
-				_, ok = actual.GetTag("S-ComputerName")
+				tv, ok = actual.GetTag("S-ComputerName")
 				require.False(t, ok)
 
 				tv, ok = actual.GetTag("S-COMPUTERNAME")
@@ -832,8 +831,8 @@ func TestMultipleConversions(t *testing.T) {
 		"bar":            "y",
 	}
 
-	require.Equal(t, expectedFields, processed[0].Fields())
-	require.Equal(t, expectedTags, processed[0].Tags())
+	assert.Equal(t, expectedFields, processed[0].Fields())
+	assert.Equal(t, expectedTags, processed[0].Tags())
 }
 
 func TestReadmeExample(t *testing.T) {
@@ -889,8 +888,8 @@ func TestReadmeExample(t *testing.T) {
 		"resp_bytes":         int64(270),
 	}
 
-	require.Equal(t, expectedFields, processed[0].Fields())
-	require.Equal(t, expectedTags, processed[0].Tags())
+	assert.Equal(t, expectedFields, processed[0].Fields())
+	assert.Equal(t, expectedTags, processed[0].Tags())
 }
 
 func newMetric(name string) telegraf.Metric {
@@ -916,9 +915,9 @@ func TestMeasurementReplace(t *testing.T) {
 		newMetric("average_cpu_usage"),
 	}
 	results := plugin.Apply(metrics...)
-	require.Equal(t, "foo:some-value:bar", results[0].Name(), "`_` was not changed to `-`")
-	require.Equal(t, "average:cpu:usage", results[1].Name(), "Input name should have been unchanged")
-	require.Equal(t, "average-cpu-usage", results[2].Name(), "All instances of `_` should have been changed to `-`")
+	assert.Equal(t, "foo:some-value:bar", results[0].Name(), "`_` was not changed to `-`")
+	assert.Equal(t, "average:cpu:usage", results[1].Name(), "Input name should have been unchanged")
+	assert.Equal(t, "average-cpu-usage", results[2].Name(), "All instances of `_` should have been changed to `-`")
 }
 
 func TestMeasurementCharDeletion(t *testing.T) {
@@ -937,9 +936,9 @@ func TestMeasurementCharDeletion(t *testing.T) {
 		newMetric("barbarbar"),
 	}
 	results := plugin.Apply(metrics...)
-	require.Equal(t, ":bar:baz", results[0].Name(), "Should have deleted the initial `foo`")
-	require.Equal(t, "foofoofoo", results[1].Name(), "Should have refused to delete the whole string")
-	require.Equal(t, "barbarbar", results[2].Name(), "Should not have changed the input")
+	assert.Equal(t, ":bar:baz", results[0].Name(), "Should have deleted the initial `foo`")
+	assert.Equal(t, "foofoofoo", results[1].Name(), "Should have refused to delete the whole string")
+	assert.Equal(t, "barbarbar", results[2].Name(), "Should not have changed the input")
 }
 
 func TestBase64Decode(t *testing.T) {

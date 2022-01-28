@@ -23,11 +23,11 @@ type Ras struct {
 	DBPath string `toml:"db_path"`
 
 	Log telegraf.Logger `toml:"-"`
+	db  *sql.DB         `toml:"-"`
 
-	db                *sql.DB
-	latestTimestamp   time.Time
-	cpuSocketCounters map[int]metricCounters
-	serverCounters    metricCounters
+	latestTimestamp   time.Time              `toml:"-"`
+	cpuSocketCounters map[int]metricCounters `toml:"-"`
+	serverCounters    metricCounters         `toml:"-"`
 }
 
 type machineCheckError struct {

@@ -296,10 +296,10 @@ func (s *Sensu) Write(metrics []telegraf.Metric) error {
 		return err
 	}
 
-	return s.writeMetrics(reqBody)
+	return s.write(reqBody)
 }
 
-func (s *Sensu) writeMetrics(reqBody []byte) error {
+func (s *Sensu) write(reqBody []byte) error {
 	var reqBodyBuffer io.Reader = bytes.NewBuffer(reqBody)
 	method := http.MethodPost
 

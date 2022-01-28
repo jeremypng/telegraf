@@ -11,11 +11,10 @@ import (
 	"path"
 	"time"
 
-	gnatsd "github.com/nats-io/nats-server/v2/server"
-
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/plugins/inputs"
+	gnatsd "github.com/nats-io/nats-server/v2/server"
 )
 
 type Nats struct {
@@ -42,16 +41,16 @@ func (n *Nats) Description() string {
 }
 
 func (n *Nats) Gather(acc telegraf.Accumulator) error {
-	address, err := url.Parse(n.Server)
+	url, err := url.Parse(n.Server)
 	if err != nil {
 		return err
 	}
-	address.Path = path.Join(address.Path, "varz")
+	url.Path = path.Join(url.Path, "varz")
 
 	if n.client == nil {
 		n.client = n.createHTTPClient()
 	}
-	resp, err := n.client.Get(address.String())
+	resp, err := n.client.Get(url.String())
 	if err != nil {
 		return err
 	}

@@ -9,5 +9,3 @@ process.yml
 /.vscode
 /*.toml
 /*.conf
-resource.syso
-versioninfo.json

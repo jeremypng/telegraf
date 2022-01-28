@@ -13,7 +13,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/influxdata/go-syslog/v3"
+	syslog "github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/nontransparent"
 	"github.com/influxdata/go-syslog/v3/octetcounting"
 	"github.com/influxdata/go-syslog/v3/rfc3164"
@@ -205,7 +205,7 @@ func (s *Syslog) Stop() {
 // getAddressParts returns the address scheme and host
 // it also sets defaults for them when missing
 // when the input address does not specify the protocol it returns an error
-func getAddressParts(a string) (scheme string, host string, err error) {
+func getAddressParts(a string) (string, string, error) {
 	parts := strings.SplitN(a, "://", 2)
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("missing protocol within address '%s'", a)
@@ -220,6 +220,7 @@ func getAddressParts(a string) (scheme string, host string, err error) {
 		return parts[0], parts[1], nil
 	}
 
+	var host string
 	if u.Hostname() != "" {
 		host = u.Hostname()
 	}
@@ -258,7 +259,7 @@ func (s *Syslog) listenPacket(acc telegraf.Accumulator) {
 
 		message, err := p.Parse(b[:n])
 		if message != nil {
-			acc.AddFields("syslog", fields(message, s), tags(message), s.currentTime())
+			acc.AddFields("syslog", fields(message, s), tags(message), s.time())
 		}
 		if err != nil {
 			acc.AddError(err)
@@ -382,7 +383,7 @@ func (s *Syslog) store(res syslog.Result, acc telegraf.Accumulator) {
 		acc.AddError(res.Error)
 	}
 	if res.Message != nil {
-		acc.AddFields("syslog", fields(res.Message, s), tags(res.Message), s.currentTime())
+		acc.AddFields("syslog", fields(res.Message, s), tags(res.Message), s.time())
 	}
 }
 
@@ -472,7 +473,7 @@ func (uc unixCloser) Close() error {
 	return err
 }
 
-func (s *Syslog) currentTime() time.Time {
+func (s *Syslog) time() time.Time {
 	t := s.now()
 	if t == s.lastTime {
 		t = t.Add(time.Nanosecond)

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	jwt "github.com/golang-jwt/jwt/v4"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
@@ -237,7 +237,9 @@ func (d *DCOS) createPoints(m *Metrics) []*point {
 			fieldKey = fieldKey + "_bytes"
 		}
 
-		fieldKey = strings.TrimPrefix(fieldKey, "dcos_metrics_module_")
+		if strings.HasPrefix(fieldKey, "dcos_metrics_module_") {
+			fieldKey = strings.TrimPrefix(fieldKey, "dcos_metrics_module_")
+		}
 
 		tagset := make([]string, 0, len(tags))
 		for k, v := range tags {

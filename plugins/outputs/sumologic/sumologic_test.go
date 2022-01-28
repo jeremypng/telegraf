@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"github.com/influxdata/telegraf/testutil"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/influxdata/telegraf"
@@ -25,7 +25,7 @@ import (
 	"github.com/influxdata/telegraf/plugins/serializers/prometheus"
 )
 
-func getMetric() telegraf.Metric {
+func getMetric(t *testing.T) telegraf.Metric {
 	m := metric.New(
 		"cpu",
 		map[string]string{},
@@ -37,7 +37,7 @@ func getMetric() telegraf.Metric {
 	return m
 }
 
-func getMetrics() []telegraf.Metric {
+func getMetrics(t *testing.T) []telegraf.Metric {
 	const count = 100
 	var metrics = make([]telegraf.Metric, count)
 
@@ -105,7 +105,7 @@ func TestMethod(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			err = plugin.Write([]telegraf.Metric{getMetric()})
+			err = plugin.Write([]telegraf.Metric{getMetric(t)})
 			require.NoError(t, err)
 		})
 	}
@@ -177,7 +177,7 @@ func TestStatusCode(t *testing.T) {
 			err = tt.plugin.Connect()
 			require.NoError(t, err)
 
-			err = tt.plugin.Write([]telegraf.Metric{getMetric()})
+			err = tt.plugin.Write([]telegraf.Metric{getMetric(t)})
 			tt.errFunc(t, err)
 		})
 	}
@@ -247,8 +247,7 @@ func TestContentType(t *testing.T) {
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				gz, err := gzip.NewReader(r.Body)
 				require.NoError(t, err)
-				_, err = io.Copy(&body, gz)
-				require.NoError(t, err)
+				io.Copy(&body, gz)
 				w.WriteHeader(http.StatusOK)
 			}))
 			defer ts.Close()
@@ -261,7 +260,7 @@ func TestContentType(t *testing.T) {
 
 			require.NoError(t, plugin.Connect())
 
-			err = plugin.Write([]telegraf.Metric{getMetric()})
+			err = plugin.Write([]telegraf.Metric{getMetric(t)})
 			require.NoError(t, err)
 
 			if tt.expectedBody != nil {
@@ -303,7 +302,7 @@ func TestContentEncodingGzip(t *testing.T) {
 				payload, err := io.ReadAll(body)
 				require.NoError(t, err)
 
-				require.Equal(t, string(payload), "metric=cpu field=value  42 0\n")
+				assert.Equal(t, string(payload), "metric=cpu field=value  42 0\n")
 
 				w.WriteHeader(http.StatusNoContent)
 			})
@@ -317,11 +316,13 @@ func TestContentEncodingGzip(t *testing.T) {
 			err = plugin.Connect()
 			require.NoError(t, err)
 
-			err = plugin.Write([]telegraf.Metric{getMetric()})
+			err = plugin.Write([]telegraf.Metric{getMetric(t)})
 			require.NoError(t, err)
 		})
 	}
 }
+
+type TestHandlerFunc func(t *testing.T, w http.ResponseWriter, r *http.Request)
 
 func TestDefaultUserAgent(t *testing.T) {
 	ts := httptest.NewServer(http.NotFoundHandler())
@@ -348,7 +349,7 @@ func TestDefaultUserAgent(t *testing.T) {
 		err = plugin.Connect()
 		require.NoError(t, err)
 
-		err = plugin.Write([]telegraf.Metric{getMetric()})
+		err = plugin.Write([]telegraf.Metric{getMetric(t)})
 		require.NoError(t, err)
 	})
 }
@@ -462,7 +463,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.URL = u.String()
 				return s
 			},
-			metrics:                  []telegraf.Metric{getMetric()},
+			metrics:                  []telegraf.Metric{getMetric(t)},
 			expectedError:            false,
 			expectedRequestCount:     1,
 			expectedMetricLinesCount: 1,
@@ -474,7 +475,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.URL = u.String()
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     1,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -489,7 +490,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 43_749
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     2,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -502,7 +503,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 10_000
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     5,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -515,7 +516,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 5_000
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     10,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -528,7 +529,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 2_500
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     20,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -541,7 +542,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 1_000
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     50,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -554,7 +555,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 500
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     100,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -567,7 +568,7 @@ func TestMaxRequestBodySize(t *testing.T) {
 				s.MaxRequstBodySize = 300
 				return s
 			},
-			metrics:                  getMetrics(),
+			metrics:                  getMetrics(t),
 			expectedError:            false,
 			expectedRequestCount:     100,
 			expectedMetricLinesCount: 500, // count (100) metrics, 5 lines per each (steal, idle, system, user, temp) = 500
@@ -595,7 +596,6 @@ func TestMaxRequestBodySize(t *testing.T) {
 
 			plugin := tt.plugin()
 			plugin.SetSerializer(serializer)
-			plugin.Log = testutil.Logger{}
 
 			err = plugin.Connect()
 			require.NoError(t, err)

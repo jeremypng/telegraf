@@ -146,33 +146,32 @@ func (m *Mcrouter) Gather(acc telegraf.Accumulator) error {
 }
 
 // ParseAddress parses an address string into 'host:port' and 'protocol' parts
-func (m *Mcrouter) ParseAddress(address string) (parsedAddress string, protocol string, err error) {
+func (m *Mcrouter) ParseAddress(address string) (string, string, error) {
+	var protocol string
 	var host string
 	var port string
 
-	parsedAddress = address
-
-	u, parseError := url.Parse(parsedAddress)
+	u, parseError := url.Parse(address)
 
 	if parseError != nil {
-		return "", "", fmt.Errorf("invalid server address")
+		return "", "", fmt.Errorf("Invalid server address")
 	}
 
 	if u.Scheme != "tcp" && u.Scheme != "unix" {
-		return "", "", fmt.Errorf("invalid server protocol")
+		return "", "", fmt.Errorf("Invalid server protocol")
 	}
 
 	protocol = u.Scheme
 
 	if protocol == "unix" {
 		if u.Path == "" {
-			return "", "", fmt.Errorf("invalid unix socket path")
+			return "", "", fmt.Errorf("Invalid unix socket path")
 		}
 
-		parsedAddress = u.Path
+		address = u.Path
 	} else {
 		if u.Host == "" {
-			return "", "", fmt.Errorf("invalid host")
+			return "", "", fmt.Errorf("Invalid host")
 		}
 
 		host = u.Hostname()
@@ -186,10 +185,10 @@ func (m *Mcrouter) ParseAddress(address string) (parsedAddress string, protocol 
 			port = defaultServerURL.Port()
 		}
 
-		parsedAddress = host + ":" + port
+		address = host + ":" + port
 	}
 
-	return parsedAddress, protocol, nil
+	return address, protocol, nil
 }
 
 func (m *Mcrouter) gatherServer(ctx context.Context, address string, acc telegraf.Accumulator) error {

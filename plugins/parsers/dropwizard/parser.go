@@ -3,14 +3,14 @@ package dropwizard
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
-
-	"github.com/tidwall/gjson"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal/templating"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/plugins/parsers/influx"
+	"github.com/tidwall/gjson"
 )
 
 type TimeFunc func() time.Time
@@ -41,8 +41,6 @@ type parser struct {
 
 	// an optional map of default tags to use for metrics
 	DefaultTags map[string]string
-
-	Log telegraf.Logger `toml:"-"`
 
 	separator      string
 	templateEngine *templating.Engine
@@ -154,7 +152,7 @@ func (p *parser) readTags(buf []byte) map[string]string {
 		var tags map[string]string
 		err := json.Unmarshal(tagsBytes, &tags)
 		if err != nil {
-			p.Log.Warnf("Failed to parse tags from JSON path '%s': %s\n", p.TagsPath, err)
+			log.Printf("W! failed to parse tags from JSON path '%s': %s\n", p.TagsPath, err)
 		} else if len(tags) > 0 {
 			return tags
 		}

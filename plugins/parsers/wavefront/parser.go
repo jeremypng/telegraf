@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -25,7 +26,6 @@ type Point struct {
 type WavefrontParser struct {
 	parsers     *sync.Pool
 	defaultTags map[string]string
-	Log         telegraf.Logger `toml:"-"`
 }
 
 // PointParser is a thread-unsafe parser and must be kept in a pool.
@@ -42,7 +42,7 @@ type PointParser struct {
 	parent   *WavefrontParser
 }
 
-// NewWavefrontElements returns a slice of ElementParser's for the Graphite format
+// Returns a slice of ElementParser's for the Graphite format
 func NewWavefrontElements() []ElementParser {
 	var elements []ElementParser
 	wsParser := WhiteSpaceParser{}
@@ -200,7 +200,7 @@ func (p *PointParser) unscan() {
 func (p *PointParser) unscanTokens(n int) {
 	if n > MaxBufferSize {
 		// just log for now
-		p.parent.Log.Infof("Cannot unscan more than %d tokens", MaxBufferSize)
+		log.Printf("cannot unscan more than %d tokens", MaxBufferSize)
 	}
 	p.buf.n += n
 }
@@ -208,7 +208,7 @@ func (p *PointParser) unscanTokens(n int) {
 func (p *PointParser) reset(buf []byte) {
 	// reset the scan buffer and write new byte
 	p.scanBuf.Reset()
-	p.scanBuf.Write(buf) //nolint:revive // from buffer.go: "err is always nil"
+	p.scanBuf.Write(buf)
 
 	if p.s == nil {
 		p.s = NewScanner(&p.scanBuf)

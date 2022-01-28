@@ -20,6 +20,7 @@ var (
 	MaxDate = time.Date(2038, 1, 19, 0, 0, 0, 0, time.UTC)
 )
 
+// Parser encapsulates a Graphite Parser.
 type GraphiteParser struct {
 	Separator      string
 	Templates      []string
@@ -76,9 +77,9 @@ func (p *GraphiteParser) Parse(buf []byte) ([]telegraf.Metric, error) {
 			line = bytes.TrimSpace(buf) // last line
 		}
 		if len(line) != 0 {
-			m, err := p.ParseLine(string(line))
+			metric, err := p.ParseLine(string(line))
 			if err == nil {
-				metrics = append(metrics, m)
+				metrics = append(metrics, metric)
 			} else {
 				errs = append(errs, err.Error())
 			}
@@ -94,7 +95,7 @@ func (p *GraphiteParser) Parse(buf []byte) ([]telegraf.Metric, error) {
 	return metrics, nil
 }
 
-// ParseLine performs Graphite parsing of a single line.
+// Parse performs Graphite parsing of a single line.
 func (p *GraphiteParser) ParseLine(line string) (telegraf.Metric, error) {
 	// Break into 3 fields (name, value, timestamp).
 	fields := strings.Fields(line)

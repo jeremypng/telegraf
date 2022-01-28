@@ -11,11 +11,10 @@ import (
 
 	cloudwatchlogsV2 "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs/types"
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf"
 	internalaws "github.com/influxdata/telegraf/config/aws"
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 type mockCloudWatchLogs struct {
@@ -58,7 +57,9 @@ func (c *mockCloudWatchLogs) PutLogEvents(_ context.Context, input *cloudwatchlo
 	sequenceToken := "arbitraryToken"
 	output := &cloudwatchlogsV2.PutLogEventsOutput{NextSequenceToken: &sequenceToken}
 	//Saving messages
-	c.pushedLogEvents = append(c.pushedLogEvents, input.LogEvents...)
+	for _, event := range input.LogEvents {
+		c.pushedLogEvents = append(c.pushedLogEvents, event)
+	}
 
 	return output, nil
 }

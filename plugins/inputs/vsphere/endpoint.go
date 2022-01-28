@@ -14,20 +14,20 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/influxdata/telegraf/filter"
+
 	"github.com/influxdata/telegraf"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/performance"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-
-	"github.com/influxdata/telegraf/filter"
 )
 
-var isolateLUN = regexp.MustCompile(`.*/([^/]+)/?$`)
+var isolateLUN = regexp.MustCompile(".*/([^/]+)/?$")
 
-var isIPv4 = regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`)
+var isIPv4 = regexp.MustCompile("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$")
 
-var isIPv6 = regexp.MustCompile(`^(?:[A-Fa-f0-9]{0,4}:){1,7}[A-Fa-f0-9]{1,4}$`)
+var isIPv6 = regexp.MustCompile("^(?:[A-Fa-f0-9]{0,4}:){1,7}[A-Fa-f0-9]{1,4}$")
 
 const maxSampleConst = 10 // Absolute maximum number of samples regardless of period
 
@@ -115,14 +115,14 @@ func (e *Endpoint) getParent(obj *objectRef, res *resourceKind) (*objectRef, boo
 
 // NewEndpoint returns a new connection to a vCenter based on the URL and configuration passed
 // as parameters.
-func NewEndpoint(ctx context.Context, parent *VSphere, address *url.URL, log telegraf.Logger) (*Endpoint, error) {
+func NewEndpoint(ctx context.Context, parent *VSphere, url *url.URL, log telegraf.Logger) (*Endpoint, error) {
 	e := Endpoint{
-		URL:               address,
+		URL:               url,
 		Parent:            parent,
-		hwMarks:           NewTSCache(hwMarkTTL, log),
+		hwMarks:           NewTSCache(hwMarkTTL),
 		lun2ds:            make(map[string]string),
 		initialized:       false,
-		clientFactory:     NewClientFactory(address, parent),
+		clientFactory:     NewClientFactory(url, parent),
 		customAttrFilter:  newFilterOrPanic(parent.CustomAttributeInclude, parent.CustomAttributeExclude),
 		customAttrEnabled: anythingEnabled(parent.CustomAttributeExclude),
 		log:               log,
@@ -457,6 +457,9 @@ func (e *Endpoint) discover(ctx context.Context) error {
 			SendInternalCounterWithTags("discovered_objects", e.URL.Host, map[string]string{"type": res.name}, int64(len(objects)))
 			numRes += int64(len(objects))
 		}
+		if err != nil {
+			e.log.Error(err)
+		}
 	}
 
 	// Build lun2ds map
@@ -581,11 +584,11 @@ func (e *Endpoint) complexMetadataSelect(ctx context.Context, res *resourceKind,
 	te.Wait()
 }
 
-func getDatacenters(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) (objectMap, error) {
+func getDatacenters(ctx context.Context, e *Endpoint, filter *ResourceFilter) (objectMap, error) {
 	var resources []mo.Datacenter
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Duration(e.Parent.Timeout))
 	defer cancel1()
-	err := resourceFilter.FindAll(ctx1, &resources)
+	err := filter.FindAll(ctx1, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -602,11 +605,11 @@ func getDatacenters(ctx context.Context, e *Endpoint, resourceFilter *ResourceFi
 	return m, nil
 }
 
-func getClusters(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) (objectMap, error) {
+func getClusters(ctx context.Context, e *Endpoint, filter *ResourceFilter) (objectMap, error) {
 	var resources []mo.ClusterComputeResource
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Duration(e.Parent.Timeout))
 	defer cancel1()
-	err := resourceFilter.FindAll(ctx1, &resources)
+	err := filter.FindAll(ctx1, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -654,9 +657,9 @@ func getClusters(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilte
 }
 
 //noinspection GoUnusedParameter
-func getHosts(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) (objectMap, error) {
+func getHosts(ctx context.Context, e *Endpoint, filter *ResourceFilter) (objectMap, error) {
 	var resources []mo.HostSystem
-	err := resourceFilter.FindAll(ctx, &resources)
+	err := filter.FindAll(ctx, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -672,11 +675,11 @@ func getHosts(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) 
 	return m, nil
 }
 
-func getVMs(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) (objectMap, error) {
+func getVMs(ctx context.Context, e *Endpoint, filter *ResourceFilter) (objectMap, error) {
 	var resources []mo.VirtualMachine
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Duration(e.Parent.Timeout))
 	defer cancel1()
-	err := resourceFilter.FindAll(ctx1, &resources)
+	err := filter.FindAll(ctx1, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -762,11 +765,11 @@ func getVMs(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) (o
 	return m, nil
 }
 
-func getDatastores(ctx context.Context, e *Endpoint, resourceFilter *ResourceFilter) (objectMap, error) {
+func getDatastores(ctx context.Context, e *Endpoint, filter *ResourceFilter) (objectMap, error) {
 	var resources []mo.Datastore
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Duration(e.Parent.Timeout))
 	defer cancel1()
-	err := resourceFilter.FindAll(ctx1, &resources)
+	err := filter.FindAll(ctx1, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -885,7 +888,7 @@ func (e *Endpoint) chunkify(ctx context.Context, res *resourceKind, now time.Tim
 	pqs := make(queryChunk, 0, e.Parent.MaxQueryObjects)
 	numQs := 0
 
-	for _, obj := range res.objects {
+	for _, object := range res.objects {
 		timeBuckets := make(map[int64]*types.PerfQuerySpec)
 		for metricIdx, metric := range res.metrics {
 			// Determine time of last successful collection
@@ -894,7 +897,7 @@ func (e *Endpoint) chunkify(ctx context.Context, res *resourceKind, now time.Tim
 				e.log.Infof("Unable to find metric name for id %d. Skipping!", metric.CounterId)
 				continue
 			}
-			start, ok := e.hwMarks.Get(obj.ref.Value, metricName)
+			start, ok := e.hwMarks.Get(object.ref.Value, metricName)
 			if !ok {
 				start = latest.Add(time.Duration(-res.sampling) * time.Second * (time.Duration(e.Parent.MetricLookback) - 1))
 			}
@@ -904,7 +907,7 @@ func (e *Endpoint) chunkify(ctx context.Context, res *resourceKind, now time.Tim
 			bucket, ok := timeBuckets[start.Unix()]
 			if !ok {
 				bucket = &types.PerfQuerySpec{
-					Entity:     obj.ref,
+					Entity:     object.ref,
 					MaxSample:  maxSampleConst,
 					MetricId:   make([]types.PerfMetricId, 0),
 					IntervalId: res.sampling,
@@ -1269,7 +1272,7 @@ func (e *Endpoint) populateTags(objectRef *objectRef, resourceType string, resou
 	}
 }
 
-func (e *Endpoint) makeMetricIdentifier(prefix, metric string) (metricName string, fieldName string) {
+func (e *Endpoint) makeMetricIdentifier(prefix, metric string) (string, string) {
 	parts := strings.Split(metric, ".")
 	if len(parts) == 1 {
 		return prefix, parts[0]

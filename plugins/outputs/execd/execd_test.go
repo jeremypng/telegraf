@@ -11,14 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/plugins/parsers/influx"
 	"github.com/influxdata/telegraf/plugins/serializers"
 	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 var now = time.Date(2020, 6, 30, 16, 16, 0, 0, time.UTC)
@@ -86,20 +85,16 @@ func runOutputConsumerProgram() {
 	parser := influx.NewStreamParser(os.Stdin)
 
 	for {
-		m, err := parser.Next()
+		metric, err := parser.Next()
 		if err != nil {
 			if err == influx.EOF {
 				return // stream ended
 			}
 			if parseErr, isParseError := err.(*influx.ParseError); isParseError {
-				//nolint:errcheck,revive // Test will fail anyway
 				fmt.Fprintf(os.Stderr, "parse ERR %v\n", parseErr)
-				//nolint:revive // error code is important for this "test"
 				os.Exit(1)
 			}
-			//nolint:errcheck,revive // Test will fail anyway
 			fmt.Fprintf(os.Stderr, "ERR %v\n", err)
-			//nolint:revive // error code is important for this "test"
 			os.Exit(1)
 		}
 
@@ -109,10 +104,8 @@ func runOutputConsumerProgram() {
 			now,
 		)
 
-		if !testutil.MetricEqual(expected, m) {
-			//nolint:errcheck,revive // Test will fail anyway
+		if !testutil.MetricEqual(expected, metric) {
 			fmt.Fprintf(os.Stderr, "metric doesn't match expected\n")
-			//nolint:revive // error code is important for this "test"
 			os.Exit(1)
 		}
 	}

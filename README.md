@@ -60,7 +60,7 @@ file and install telegraf:
 cat <<EOF | sudo tee /etc/yum.repos.d/influxdb.repo
 [influxdb]
 name = InfluxDB Repository - RHEL $releasever
-baseurl = https://repos.influxdata.com/rhel/\$releasever/\$basearch/stable
+baseurl = https://repos.influxdata.com/rhel/$releasever/$basearch/stable
 enabled = 1
 gpgcheck = 1
 gpgkey = https://repos.influxdata.com/influxdb.key
@@ -74,14 +74,11 @@ Telegraf requires Go version 1.17 or newer, the Makefile requires GNU make.
 
 1. [Install Go](https://golang.org/doc/install) >=1.17 (1.17.2 recommended)
 2. Clone the Telegraf repository:
-
-   ```shell
+   ```
    git clone https://github.com/influxdata/telegraf.git
    ```
-
 3. Run `make` from the source directory
-
-   ```shell
+   ```
    cd telegraf
    make
    ```
@@ -109,31 +106,31 @@ See usage with:
 telegraf --help
 ```
 
-### Generate a telegraf config file
+#### Generate a telegraf config file:
 
 ```shell
 telegraf config > telegraf.conf
 ```
 
-### Generate config with only cpu input & influxdb output plugins defined
+#### Generate config with only cpu input & influxdb output plugins defined:
 
 ```shell
 telegraf --section-filter agent:inputs:outputs --input-filter cpu --output-filter influxdb config
 ```
 
-### Run a single telegraf collection, outputting metrics to stdout
+#### Run a single telegraf collection, outputting metrics to stdout:
 
 ```shell
 telegraf --config telegraf.conf --test
 ```
 
-### Run telegraf with all plugins defined in config file
+#### Run telegraf with all plugins defined in config file:
 
 ```shell
 telegraf --config telegraf.conf
 ```
 
-### Run telegraf, enabling the cpu & memory input, and influxdb output plugins
+#### Run telegraf, enabling the cpu & memory input, and influxdb output plugins:
 
 ```shell
 telegraf --config telegraf.conf --input-filter cpu:mem --output-filter influxdb
@@ -141,7 +138,7 @@ telegraf --config telegraf.conf --input-filter cpu:mem --output-filter influxdb
 
 ## Documentation
 
-[Latest Release Documentation](https://docs.influxdata.com/telegraf/latest/)
+[Latest Release Documentation](https://docs.influxdata.com/telegraf)
 
 For documentation on the latest development code see the [documentation index](/docs).
 

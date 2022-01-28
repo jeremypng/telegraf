@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/influxdata/telegraf/testutil"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
-	"github.com/influxdata/telegraf/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 func getMetric() telegraf.Metric {
@@ -225,7 +225,7 @@ func TestContentEncodingGzip(t *testing.T) {
 				require.Len(t, s.Streams, 1)
 				require.Len(t, s.Streams[0].Logs, 1)
 				require.Len(t, s.Streams[0].Logs[0], 2)
-				require.Equal(t, map[string]string{"__name": "log", "key1": "value1"}, s.Streams[0].Labels)
+				require.Equal(t, map[string]string{"key1": "value1"}, s.Streams[0].Labels)
 				require.Equal(t, "123000000000", s.Streams[0].Logs[0][0])
 				require.Contains(t, s.Streams[0].Logs[0][1], "line=\"my log\"")
 				require.Contains(t, s.Streams[0].Logs[0][1], "field=\"3.14\"")
@@ -329,8 +329,7 @@ func TestOAuthClientCredentialsGrant(t *testing.T) {
 				values.Add("access_token", token)
 				values.Add("token_type", "bearer")
 				values.Add("expires_in", "3600")
-				_, err = w.Write([]byte(values.Encode()))
-				require.NoError(t, err)
+				w.Write([]byte(values.Encode()))
 			},
 			handler: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, []string{"Bearer " + token}, r.Header["Authorization"])
@@ -405,7 +404,7 @@ func TestMetricSorting(t *testing.T) {
 			require.Len(t, s.Streams, 1)
 			require.Len(t, s.Streams[0].Logs, 2)
 			require.Len(t, s.Streams[0].Logs[0], 2)
-			require.Equal(t, map[string]string{"__name": "log", "key1": "value1"}, s.Streams[0].Labels)
+			require.Equal(t, map[string]string{"key1": "value1"}, s.Streams[0].Labels)
 			require.Equal(t, "456000000000", s.Streams[0].Logs[0][0])
 			require.Contains(t, s.Streams[0].Logs[0][1], "line=\"older log\"")
 			require.Contains(t, s.Streams[0].Logs[0][1], "field=\"3.14\"")

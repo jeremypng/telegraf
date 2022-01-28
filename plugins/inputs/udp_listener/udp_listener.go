@@ -2,6 +2,7 @@ package udp_listener
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -95,7 +96,7 @@ func (u *UDPListener) Start(acc telegraf.Accumulator) error {
 	u.Lock()
 	defer u.Unlock()
 
-	u.Log.Warn("DEPRECATED: the UDP listener plugin has been deprecated " +
+	log.Println("W! DEPRECATED: the UDP listener plugin has been deprecated " +
 		"in favor of the socket_listener plugin " +
 		"(https://github.com/influxdata/telegraf/tree/master/plugins/inputs/socket_listener)")
 
@@ -171,7 +172,8 @@ func (u *UDPListener) udpListenLoop() {
 
 			n, _, err := u.listener.ReadFromUDP(buf)
 			if err != nil {
-				if err, ok := err.(net.Error); !ok || !err.Timeout() {
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+				} else {
 					u.Log.Error(err.Error())
 				}
 				continue

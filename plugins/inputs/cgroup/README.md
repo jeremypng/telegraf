@@ -10,35 +10,38 @@ Following file formats are supported:
 
 * Single value
 
-```text
+```
 VAL\n
 ```
 
 * New line separated values
 
-```text
+```
 VAL0\n
 VAL1\n
 ```
 
 * Space separated values
 
-```text
+```
 VAL0 VAL1 ...\n
 ```
 
 * Space separated keys and value, separated by new line
 
-```text
+```
 KEY0 ... VAL0\n
 KEY1 ... VAL1\n
 ```
 
-## Tags
 
-All measurements have the `path` tag.
+### Tags:
 
-## Configuration
+All measurements have the following tags:
+  - path
+
+
+### Configuration:
 
 ```toml
 # Read specific statistics per cgroup
@@ -57,7 +60,7 @@ All measurements have the `path` tag.
   # files = ["memory.*usage*", "memory.limit_in_bytes"]
 ```
 
-## Example
+### usage examples:
 
 ```toml
 # [[inputs.cgroup]]

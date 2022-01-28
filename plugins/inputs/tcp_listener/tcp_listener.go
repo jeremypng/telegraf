@@ -3,6 +3,7 @@ package tcp_listener
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"sync"
 
@@ -87,7 +88,7 @@ func (t *TCPListener) Start(acc telegraf.Accumulator) error {
 	t.Lock()
 	defer t.Unlock()
 
-	t.Log.Warn("DEPRECATED: the TCP listener plugin has been deprecated " +
+	log.Println("W! DEPRECATED: the TCP listener plugin has been deprecated " +
 		"in favor of the socket_listener plugin " +
 		"(https://github.com/influxdata/telegraf/tree/master/plugins/inputs/socket_listener)")
 

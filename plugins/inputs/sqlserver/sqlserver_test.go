@@ -32,9 +32,8 @@ func TestSqlServer_QueriesInclusionExclusion(t *testing.T) {
 			QueryVersion: 2,
 			IncludeQuery: test["IncludeQuery"].([]string),
 			ExcludeQuery: test["ExcludeQuery"].([]string),
-			Log:          testutil.Logger{},
 		}
-		require.NoError(t, s.initQueries())
+		require.NoError(t, initQueries(&s))
 		require.Equal(t, len(s.queries), test["queriesTotal"].(int))
 		for _, query := range test["queries"].([]string) {
 			require.Contains(t, s.queries, query)
@@ -117,12 +116,10 @@ func TestSqlServer_MultipleInstanceIntegration(t *testing.T) {
 	s := &SQLServer{
 		Servers:      []string{testServer},
 		ExcludeQuery: []string{"MemoryClerk"},
-		Log:          testutil.Logger{},
 	}
 	s2 := &SQLServer{
 		Servers:      []string{testServer},
 		ExcludeQuery: []string{"DatabaseSize"},
-		Log:          testutil.Logger{},
 	}
 
 	var acc, acc2 testutil.Accumulator
@@ -154,13 +151,11 @@ func TestSqlServer_MultipleInstanceWithHealthMetricIntegration(t *testing.T) {
 	s := &SQLServer{
 		Servers:      []string{testServer},
 		ExcludeQuery: []string{"MemoryClerk"},
-		Log:          testutil.Logger{},
 	}
 	s2 := &SQLServer{
 		Servers:      []string{testServer},
 		ExcludeQuery: []string{"DatabaseSize"},
 		HealthMetric: true,
-		Log:          testutil.Logger{},
 	}
 
 	var acc, acc2 testutil.Accumulator
@@ -197,14 +192,12 @@ func TestSqlServer_HealthMetric(t *testing.T) {
 		IncludeQuery: []string{"DatabaseSize", "MemoryClerk"},
 		HealthMetric: true,
 		AuthMethod:   "connection_string",
-		Log:          testutil.Logger{},
 	}
 
 	s2 := &SQLServer{
 		Servers:      []string{fakeServer1},
 		IncludeQuery: []string{"DatabaseSize"},
 		AuthMethod:   "connection_string",
-		Log:          testutil.Logger{},
 	}
 
 	// acc1 should have the health metric because it is specified in the config
@@ -232,17 +225,16 @@ func TestSqlServer_HealthMetric(t *testing.T) {
 }
 
 func TestSqlServer_MultipleInit(t *testing.T) {
-	s := &SQLServer{Log: testutil.Logger{}}
+	s := &SQLServer{}
 	s2 := &SQLServer{
 		ExcludeQuery: []string{"DatabaseSize"},
-		Log:          testutil.Logger{},
 	}
 
-	require.NoError(t, s.initQueries())
+	require.NoError(t, initQueries(s))
 	_, ok := s.queries["DatabaseSize"]
 	require.True(t, ok)
 
-	require.NoError(t, s.initQueries())
+	require.NoError(t, initQueries(s2))
 	_, ok = s2.queries["DatabaseSize"]
 	require.False(t, ok)
 	s.Stop()
@@ -343,13 +335,11 @@ func TestSqlServer_AGQueriesApplicableForDatabaseTypeSQLServer(t *testing.T) {
 		Servers:      []string{testServer},
 		DatabaseType: "SQLServer",
 		IncludeQuery: []string{"SQLServerAvailabilityReplicaStates", "SQLServerDatabaseReplicaStates"},
-		Log:          testutil.Logger{},
 	}
 	s2 := &SQLServer{
 		Servers:      []string{testServer},
 		DatabaseType: "AzureSQLDB",
 		IncludeQuery: []string{"SQLServerAvailabilityReplicaStates", "SQLServerDatabaseReplicaStates"},
-		Log:          testutil.Logger{},
 	}
 
 	var acc, acc2 testutil.Accumulator
@@ -386,13 +376,11 @@ func TestSqlServer_AGQueryFieldsOutputBasedOnSQLServerVersion(t *testing.T) {
 		Servers:      []string{testServer2019},
 		DatabaseType: "SQLServer",
 		IncludeQuery: []string{"SQLServerAvailabilityReplicaStates", "SQLServerDatabaseReplicaStates"},
-		Log:          testutil.Logger{},
 	}
 	s2012 := &SQLServer{
 		Servers:      []string{testServer2012},
 		DatabaseType: "SQLServer",
 		IncludeQuery: []string{"SQLServerAvailabilityReplicaStates", "SQLServerDatabaseReplicaStates"},
-		Log:          testutil.Logger{},
 	}
 
 	var acc2019, acc2012 testutil.Accumulator

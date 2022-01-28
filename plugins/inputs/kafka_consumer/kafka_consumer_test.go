@@ -43,10 +43,10 @@ type FakeCreator struct {
 	ConsumerGroup *FakeConsumerGroup
 }
 
-func (c *FakeCreator) Create(brokers []string, group string, cfg *sarama.Config) (ConsumerGroup, error) {
+func (c *FakeCreator) Create(brokers []string, group string, config *sarama.Config) (ConsumerGroup, error) {
 	c.ConsumerGroup.brokers = brokers
 	c.ConsumerGroup.group = group
-	c.ConsumerGroup.config = cfg
+	c.ConsumerGroup.config = config
 	return c.ConsumerGroup, nil
 }
 

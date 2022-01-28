@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/influxdata/telegraf"
@@ -80,7 +81,7 @@ func TestTailBadLine(t *testing.T) {
 	acc.Wait(1)
 
 	tt.Stop()
-	require.Contains(t, buf.String(), "Malformed log line")
+	assert.Contains(t, buf.String(), "Malformed log line")
 }
 
 func TestTailDosLineEndings(t *testing.T) {
@@ -136,7 +137,7 @@ func TestGrokParseLogFilesWithMultiline(t *testing.T) {
 	require.NoError(t, err)
 
 	acc := testutil.Accumulator{}
-	require.NoError(t, tt.Start(&acc))
+	assert.NoError(t, tt.Start(&acc))
 	defer tt.Stop()
 
 	acc.Wait(3)
@@ -167,7 +168,7 @@ func TestGrokParseLogFilesWithMultiline(t *testing.T) {
 			"loglevel": "ERROR",
 		})
 
-	require.Equal(t, uint64(3), acc.NMetrics())
+	assert.Equal(t, uint64(3), acc.NMetrics())
 }
 
 func TestGrokParseLogFilesWithMultilineTimeout(t *testing.T) {
@@ -200,7 +201,7 @@ func TestGrokParseLogFilesWithMultilineTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	acc := testutil.Accumulator{}
-	require.NoError(t, tt.Start(&acc))
+	assert.NoError(t, tt.Start(&acc))
 	time.Sleep(11 * time.Millisecond) // will force timeout
 	_, err = tmpfile.WriteString("[04/Jun/2016:12:41:48 +0100] INFO HelloExample: This is info\r\n")
 	require.NoError(t, err)
@@ -212,7 +213,7 @@ func TestGrokParseLogFilesWithMultilineTimeout(t *testing.T) {
 	require.NoError(t, tmpfile.Sync())
 	acc.Wait(3)
 	tt.Stop()
-	require.Equal(t, uint64(3), acc.NMetrics())
+	assert.Equal(t, uint64(3), acc.NMetrics())
 	expectedPath := tmpfile.Name()
 
 	acc.AssertContainsTaggedFields(t, "tail_grok",
@@ -253,9 +254,9 @@ func TestGrokParseLogFilesWithMultilineTailerCloseFlushesMultilineBuffer(t *test
 	require.NoError(t, err)
 
 	acc := testutil.Accumulator{}
-	require.NoError(t, tt.Start(&acc))
+	assert.NoError(t, tt.Start(&acc))
 	acc.Wait(3)
-	require.Equal(t, uint64(3), acc.NMetrics())
+	assert.Equal(t, uint64(3), acc.NMetrics())
 	// Close tailer, so multiline buffer is flushed
 	tt.Stop()
 	acc.Wait(4)
@@ -301,13 +302,11 @@ cpu,42
 	plugin.FromBeginning = true
 	plugin.Files = []string{tmpfile.Name()}
 	plugin.SetParserFunc(func() (parsers.Parser, error) {
-		parser := csv.Parser{
+		return csv.NewParser(&csv.Config{
 			MeasurementColumn: "measurement",
 			HeaderRowCount:    1,
 			TimeFunc:          func() time.Time { return time.Unix(0, 0) },
-		}
-		err := parser.Init()
-		return &parser, err
+		})
 	})
 
 	err = plugin.Init()
@@ -337,69 +336,6 @@ cpu,42
 			},
 			map[string]interface{}{
 				"time_idle": 42,
-			},
-			time.Unix(0, 0)),
-	}
-	testutil.RequireMetricsEqual(t, expected, acc.GetTelegrafMetrics())
-}
-
-func TestCSVMultiHeaderWithSkipRowANDColumn(t *testing.T) {
-	tmpfile, err := os.CreateTemp("", "")
-	require.NoError(t, err)
-	defer os.Remove(tmpfile.Name())
-
-	_, err = tmpfile.WriteString(`garbage nonsense
-skip,measurement,value
-row,1,2
-skip1,cpu,42
-skip2,mem,100
-`)
-	require.NoError(t, err)
-	require.NoError(t, tmpfile.Close())
-
-	plugin := NewTestTail()
-	plugin.Log = testutil.Logger{}
-	plugin.FromBeginning = true
-	plugin.Files = []string{tmpfile.Name()}
-	plugin.SetParserFunc(func() (parsers.Parser, error) {
-		parser := csv.Parser{
-			MeasurementColumn: "measurement1",
-			HeaderRowCount:    2,
-			SkipRows:          1,
-			SkipColumns:       1,
-			TimeFunc:          func() time.Time { return time.Unix(0, 0) },
-		}
-		err := parser.Init()
-		return &parser, err
-	})
-
-	err = plugin.Init()
-	require.NoError(t, err)
-
-	acc := testutil.Accumulator{}
-	err = plugin.Start(&acc)
-	require.NoError(t, err)
-	defer plugin.Stop()
-	err = plugin.Gather(&acc)
-	require.NoError(t, err)
-	acc.Wait(2)
-	plugin.Stop()
-
-	expected := []telegraf.Metric{
-		testutil.MustMetric("cpu",
-			map[string]string{
-				"path": tmpfile.Name(),
-			},
-			map[string]interface{}{
-				"value2": 42,
-			},
-			time.Unix(0, 0)),
-		testutil.MustMetric("mem",
-			map[string]string{
-				"path": tmpfile.Name(),
-			},
-			map[string]interface{}{
-				"value2": 100,
 			},
 			time.Unix(0, 0)),
 	}
@@ -564,6 +500,7 @@ func TestCharacterEncoding(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			plugin := &Tail{
 				Files:               []string{filepath.Join(testdataDir, tt.testfiles)},
 				FromBeginning:       tt.fromBeginning,

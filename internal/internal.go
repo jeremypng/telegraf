@@ -42,10 +42,6 @@ func SetVersion(v string) error {
 		return ErrorVersionAlreadySet
 	}
 	version = v
-	if version == "" {
-		version = "unknown"
-	}
-
 	return nil
 }
 
@@ -185,7 +181,7 @@ func AlignTime(tm time.Time, interval time.Duration) time.Time {
 	return truncated.Add(interval)
 }
 
-// ExitStatus takes the error from exec.Command
+// Exit status takes the error from exec.Command
 // and returns the exit status and true
 // if error is not exit status, will return 0 and false
 func ExitStatus(err error) (int, bool) {

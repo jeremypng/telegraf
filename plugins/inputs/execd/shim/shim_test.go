@@ -121,10 +121,10 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	c := "./testdata/plugin.conf"
-	loadedInputs, err := LoadConfig(&c)
+	inputs, err := LoadConfig(&c)
 	require.NoError(t, err)
 
-	inp := loadedInputs[0].(*serviceInput)
+	inp := inputs[0].(*serviceInput)
 
 	require.Equal(t, "awesome name", inp.ServiceName)
 	require.Equal(t, "xxxxxxxxxx", inp.SecretToken)
