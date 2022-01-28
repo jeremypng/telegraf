@@ -39,6 +39,7 @@ require (
 	github.com/aws/smithy-go v1.8.0
 	github.com/benbjohnson/clock v1.1.0
 	github.com/bitly/go-hostpool v0.1.0 // indirect
+	github.com/cisco-en-programmability/dnacenter-go-sdk/v3 v3.4.0
 	github.com/cisco-ie/nx-telemetry-proto v0.0.0-20190531143454-82441e232cf6
 	github.com/coreos/go-semver v0.3.0
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f
